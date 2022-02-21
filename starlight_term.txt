@@ -1,0 +1,24 @@
+the e-Compass model is BMM-150
+
+Camera Synchronization
+
+Blower Control
+
+in CUDA capable GPUs
+
+Frame Synchronization
+
+AEC Over Region-of-interest
+
+Anti-banding
+
+6.2.5 COLOR CORRECTION TRANSFORM: A color transform matrix to use to transform from 
+sensor RGB color space to output linear sRGB color space
+
+
+The GNSS (Global Navigation Satellite System) and Qlink I/F, Multimedia Displayport, FM radio, and other unused hardware 
+will be shutdown to save power.
+
+
+DFM: Design for Manufacturability（可製造性設計）
+DFA: Design for Assembly（可裝配性設計）
