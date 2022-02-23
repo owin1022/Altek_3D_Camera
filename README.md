@@ -1,11 +1,11 @@
-# Altek_UVC_Camera_SDK
+# Altek_3D_Camera_SDK
 <p align="center"><img src="doc/img/realsense.png" width="70%" /><br><br></p>
 
 -----------------
 [![GitHub CI](../../actions/workflows/buildsCI.yaml/badge.svg?branch=development)](../../actions/workflows/buildsCI.yaml)
 
 ## Overview
-**Altek_UVC_Camera_SDK™ SDK 1.0** is a cross-platform library for Intel® RealSense™ depth cameras (D400 & L500 series and the SR300) and the [T265 tracking camera](./doc/t265.md).
+**Altek_3D_Camera_SDK™ SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras (D400 & L500 series and the SR300) and the [T265 tracking camera](./doc/t265.md).
 
 
 
