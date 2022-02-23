@@ -17,7 +17,7 @@ Information about the Intel® RealSense™ technology at [www.intelrealsense.com
 
 > :open_file_folder: Don't have access to a RealSense camera? Check-out [sample data](./doc/sample-data.md)
 
-## Special notice from Intel® RealSense™ regarding the recent press announcement
+## Special notice from Altek™ regarding the recent press announcement
 
 Intel has decided to wind down the RealSense business and is announcing the EOL of LiDAR, Facial Authentication, and Tracking product lines this month. Intel will continue to provide Stereo products to its current distribution customers.  Intel will focus our new development on advancing innovative technologies that better support our core businesses and IDM 2.0 strategy.
 The products identified in this notification will be discontinued and unavailable for additional orders after Feb 28, 2022.
