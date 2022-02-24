@@ -61,7 +61,7 @@ The librealsense port in vcpkg is kept up to date by Microsoft team members and 
 
 ## Ready to Hack!
 
-Our library offers a high level API for using Intel RealSense depth cameras (in addition to lower level ones).
+Our library offers a high level API for using Altek depth cameras (in addition to lower level ones).
 The following snippet shows how to start streaming frames and extracting the depth value of a pixel:
 
 ```cpp
@@ -93,7 +93,7 @@ while (true)
 For more information on the library, please follow our [examples](./examples), and read the [documentation](./doc) to learn more.
 
 ## Contributing
-In order to contribute to Intel RealSense SDK, please follow our [contribution guidelines](CONTRIBUTING.md).
+In order to contribute to Altek SDK, please follow our [contribution guidelines](CONTRIBUTING.md).
 
 ## License
 This project is licensed under the [Apache License, Version 2.0](LICENSE).
