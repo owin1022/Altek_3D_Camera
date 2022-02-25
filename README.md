@@ -5,58 +5,41 @@
 [![GitHub CI](../../actions/workflows/buildsCI.yaml/badge.svg?branch=development)](../../actions/workflows/buildsCI.yaml)
 
 ## Overview
-**Altek_3D_Camera_SDK™ SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras (D400 & L500 series and the SR300) and the [T265 tracking camera](./doc/t265.md).
+**Altek_3D_Camera_SDK™ SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras  and the [T265 tracking camera](./doc/t265.md).
 
 
 
 The SDK allows depth and color streaming, and provides intrinsic and extrinsic calibration information.
 The library also offers synthetic streams (pointcloud, depth aligned to color and vise-versa), and a built-in support for [record and playback](./doc/record-and-playback.md) of streaming sessions.
 
-Developer kits containing the necessary hardware to use this library are available for purchase at [store.intelrealsense.com](https://store.intelrealsense.com/products.html).
-Information about the Intel® RealSense™ technology at [www.intelrealsense.com](https://www.intelrealsense.com/)
+Developer kits containing the necessary hardware to use this library are available for purchase at [store.altek.com](hhttps://store.altek.com.tw/qualcomm/).
+Information about the Altek_3D_Camera technology at [https://www.altek.com.tw/](https://store.altek.com.tw/qualcomm/)
 
-> :open_file_folder: Don't have access to a RealSense camera? Check-out [sample data](./doc/sample-data.md)
+> :open_file_folder: Don't have access to a Altek_3D_Camera? Check-out [sample data](./doc/sample-data.md)
 
 ## Special notice from Altek™ regarding the recent press announcement
 
-Intel has decided to wind down the RealSense business and is announcing the EOL of LiDAR, Facial Authentication, and Tracking product lines this month. Intel will continue to provide Stereo products to its current distribution customers.  Intel will focus our new development on advancing innovative technologies that better support our core businesses and IDM 2.0 strategy.
+Altek has decided to wind down the AI Camera business and is announcing the EOL of LiDAR, Facial Authentication, and Tracking product lines this month. Altek will continue to provide Stereo products to its current distribution customers.  Altek will focus our new development on advancing innovative technologies that better support our core businesses.
 The products identified in this notification will be discontinued and unavailable for additional orders after Feb 28, 2022.
 
-The following Stereo Product Lines WILL continue to be supported: D410, D415, D430, D450 modules and D415, D435, D435i, D455 depth cameras. 
+The following Stereo Product Lines WILL continue to be supported: AL6100 depth cameras. 
 
-We will also continue the work to support and develop our LibRealSense open source SDK.
+We will also continue the work to support and develop our Altek open source SDK.
 
-In the coming future Intel and the RealSense team will focus our new development on advancing innovative technologies that better support our core businesses and IDM 2.0 strategy.
+In the coming future Altek and AL6100 team will focus our new development on advancing innovative technologies that better support our core businesses and 
 
-## Building librealsense - Using vcpkg
-
-You can download and install librealsense using the [vcpkg](https://github.com/Microsoft/vcpkg) dependency manager:
-
-    git clone https://github.com/Microsoft/vcpkg.git
-    cd vcpkg
-    ./bootstrap-vcpkg.sh
-    ./vcpkg integrate install
-    ./vcpkg install realsense2
 
 The librealsense port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
 ## Download and Install
 * **Download** - The latest releases including the Intel RealSense SDK, Viewer and Depth Quality tools are available at: [**latest releases**](https://github.com/IntelRealSense/librealsense/releases). Please check the [**release notes**](https://github.com/IntelRealSense/librealsense/wiki/Release-Notes) for the supported platforms, new features and capabilities, known issues, how to upgrade the Firmware and more.
 
-* **Install** - You can also install or build from source the SDK (on [Linux](./doc/distribution_linux.md) \ [Windows](./doc/distribution_windows.md) ), connect your D400 depth camera and you are ready to start writing your first application.
+* **Install** - You can also install or build from source the SDK (on [Linux](./doc/distribution_linux.md) \ [Windows](./doc/distribution_windows.md) ), connect your AL6100 depth camera and you are ready to start writing your first application.
 
 > **Support & Issues**: If you need product support (e.g. ask a question about / are having problems with the device), please check the [FAQ & Troubleshooting](https://github.com/IntelRealSense/librealsense/wiki/Troubleshooting-Q%26A) section.
 > If not covered there, please search our [Closed GitHub Issues](https://github.com/IntelRealSense/librealsense/issues?utf8=%E2%9C%93&q=is%3Aclosed) page,  [Community](https://communities.intel.com/community/tech/realsense) and [Support](https://www.intel.com/content/www/us/en/support/emerging-technologies/intel-realsense-technology.html) sites.
 > If you still cannot find an answer to your question, please [open a new issue](https://github.com/IntelRealSense/librealsense/issues/new).
 
-## What’s included in the SDK:
-| What | Description | Download link|
-| ------- | ------- | ------- |
-| **[Intel® RealSense™ Viewer](./tools/realsense-viewer)** | With this application, you can quickly access your Intel® RealSense™ Depth Camera to view the depth stream, visualize point clouds, record and playback streams, configure your camera settings, modify advanced controls, enable depth visualization and post processing  and much more. | [**Intel.RealSense.Viewer.exe**](https://github.com/IntelRealSense/librealsense/releases) |
-| **[Depth Quality Tool](./tools/depth-quality)** | This application allows you to test the camera’s depth quality, including: standard deviation from plane fit, normalized RMS – the subpixel accuracy, distance accuracy and fill rate. You should be able to easily get and interpret several of the depth quality metrics and record and save the data for offline analysis. |[**Depth.Quality.Tool.exe**](https://github.com/IntelRealSense/librealsense/releases) |
-| **[Debug Tools](./tools/)** | Device enumeration, FW logger, etc as can be seen at the tools directory | Included in [**Intel.RealSense.SDK.exe**](https://github.com/IntelRealSense/librealsense/releases)|
-| **[Code Samples](./examples)** |These simple examples demonstrate how to easily use the SDK to include code snippets that access the camera into your applications. Check some of the [**C++ examples**](./examples) including capture, pointcloud and more and basic [**C examples**](./examples/C) | Included in [**Intel.RealSense.SDK.exe**](https://github.com/IntelRealSense/librealsense/releases) |
-| **[Wrappers](https://github.com/IntelRealSense/librealsense/tree/development/wrappers)** | [Python](./wrappers/python), [C#/.NET](./wrappers/csharp), [Node.js](./wrappers/nodejs) API, as well as integration with the following 3rd-party technologies: [ROS](https://github.com/intel-ros/realsense/releases), [ROS2](https://github.com/intel/ros2_intel_realsense), [LabVIEW](./wrappers/labview), [OpenCV](./wrappers/opencv), [PCL](./wrappers/pcl), [Unity](./wrappers/unity), [Matlab](./wrappers/matlab), [OpenNI](./wrappers/openni2), [UnrealEngine4](./wrappers/unrealengine4) and more to come. | |
 
 
 ## Ready to Hack!
