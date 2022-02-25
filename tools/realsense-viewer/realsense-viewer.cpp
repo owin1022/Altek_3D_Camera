@@ -298,7 +298,9 @@ int main(int argc, const char** argv) try
     std::shared_ptr<device_models_list> device_models = std::make_shared<device_models_list>();
 
     context ctx;
-    ux_window window("Intel RealSense Viewer", ctx);
+    //ux_window window("Intel RealSense Viewer", ctx);
+
+	ux_window window("Altek Robot Eye Viewer", ctx); // Ken++
 
     // Create RealSense Context
     device_changes devices_connection_changes(ctx);
@@ -365,6 +367,7 @@ int main(int argc, const char** argv) try
     {
         refresh_devices(m, ctx, devices_connection_changes, connected_devs,
             device_names, *device_models, viewer_model, error_message);
+		
         return true;
     };
 
@@ -385,6 +388,11 @@ int main(int argc, const char** argv) try
     {
         auto device_changed = refresh_devices(m, ctx, devices_connection_changes, connected_devs,
             device_names, *device_models, viewer_model, error_message);
+        if (device_changed)
+        {
+            std::string msg = to_string() << "detect device_changed";
+            rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+        }
 
         auto output_height = viewer_model.get_output_height();
 

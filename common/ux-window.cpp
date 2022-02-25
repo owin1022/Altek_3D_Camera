@@ -488,7 +488,8 @@ namespace rs2
 
             if (!_missing_device)
             {
-                _dev_stat_message = u8"\uf287 RealSense device detected.";
+                //_dev_stat_message = u8"\uf287 RealSense device detected."; 
+				_dev_stat_message = u8"\uf287 device detected."; // Ken++ demo
                 _query_devices = false;
             }
         }
@@ -512,6 +513,9 @@ namespace rs2
         ImGui::SetNextWindowSize({ (float)_width, (float)_height });
         ImGui::Begin("Splash Screen Banner", nullptr, flags);
         ImGui::PushFont(_font_18);
+
+		auto h = ImGui::GetWindowSize().y; // Ken ++ demo
+		ImGui::SetCursorPosY(h * 0.3f); // Ken ++ demo
 
         ImGui::Text("%s   Loading %s...", hourglass.c_str(), _title_str.c_str());
     }
@@ -567,7 +571,7 @@ namespace rs2
         }
 
         // If we are just getting started, render the Splash Screen instead of normal UI
-        while (res && (!_app_ready || _splash_timer.get_elapsed_ms() < 2000.f))
+        while (res && (!_app_ready || _splash_timer.get_elapsed_ms() < 4000.f)) //Ken ++, demo  2000.f -> 4000.f
         {
             res = !glfwWindowShouldClose(_win);
             glfwPollEvents();

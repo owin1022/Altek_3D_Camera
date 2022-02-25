@@ -72,7 +72,7 @@ namespace librealsense
     {
         if( SR300_RECOVERY == usb_info.pid )
             return RS2_PRODUCT_LINE_SR300;
-        if( ds::RS_RECOVERY_PID == usb_info.pid || ds::AL3D_PID == usb_info.pid) //al3d
+        if (ds::RS_RECOVERY_PID == usb_info.pid ) 
             return RS2_PRODUCT_LINE_D400;
         if( L500_RECOVERY_PID == usb_info.pid || L535_RECOVERY_PID == usb_info.pid)
             return RS2_PRODUCT_LINE_L500;
@@ -128,8 +128,6 @@ namespace librealsense
                     continue;
                 if (ds::RS_RECOVERY_PID == info.pid)
                     return std::make_shared<ds_update_device>(ctx, register_device_notifications, usb);   
-                if (ds::AL3D_PID == info.pid)  //al3d
-                    return std::make_shared<ds_update_device>(ctx, register_device_notifications, usb);
                 if (SR300_RECOVERY == info.pid)
                     return std::make_shared<sr300_update_device>(ctx, register_device_notifications, usb);
                 if (L500_RECOVERY_PID == info.pid || L535_RECOVERY_PID == info.pid)

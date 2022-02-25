@@ -1392,6 +1392,8 @@ namespace rs2
                     }
                 }
             }
+            //if (index > 1)
+            //    not_model->add_log(to_string() << "index: " << index << "\n");
 
             for(auto&& f : last_frames)
                 not_model->output.update_dashboards(f.second);
@@ -2015,7 +2017,7 @@ namespace rs2
         glEnable(GL_DEPTH_TEST);
 
         glDepthMask(GL_FALSE);
-        if (show_skybox) _skybox.render(pos);
+        //if (show_skybox) _skybox.render(pos); // aston_20220111, remove intel's skybox in 3d view.
         glDepthMask(GL_TRUE);
 
         auto r1 = matrix4::identity();
@@ -2450,14 +2452,20 @@ namespace rs2
 
             if (ImGui::Selectable("Report Issue"))
             {
-                open_issue(devices);
+                //open_issue(devices); // Ken-- demo
             }
 
+#if 1 // Ken ++ demo
+			if (ImGui::Selectable("Altek Store"))
+			{
+				open_url("https://store.altek.com.tw/qualcomm/");
+			}
+#else
             if (ImGui::Selectable("Intel Store"))
             {
                 open_url("https://store.intelrealsense.com/");
             }
-
+#endif
             if (ImGui::Selectable(settings))
             {
                 open_settings_popup = true;
@@ -2996,7 +3004,45 @@ namespace rs2
         {
             ImGui::OpenPopup(about);                    
         }
+#if 1 // Ken ++ demo
+		{
+			float w = 150.f;
+			float h = 100.f;
+            float x0 = (window.width() - w) / 2.f;
+            float y0 = (window.height() - h) / 2.f;
+            ImGui::SetNextWindowPos({ x0, y0 });
+            ImGui::SetNextWindowSize({ w, h });
 
+            flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+
+            ImGui_ScopePushFont(window.get_font());
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, sensor_bg);
+            ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, white);
+            ImGui::PushStyleColor(ImGuiCol_Text, light_grey);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 1);
+
+            if (ImGui::BeginPopupModal(about, nullptr, flags))
+            {        
+				ImGui::PushStyleColor(ImGuiCol_Button, sensor_bg);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, sensor_bg);
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, sensor_bg);
+				ImGui::PushStyleColor(ImGuiCol_Text, light_blue);
+
+				hyperlink(window, "Altek Corporation.", "https://www.altek.com.tw/EN/index");
+				ImGui::PopStyleColor(4);
+                ImGui::SetCursorScreenPos({ (float)(x0 + w / 2 - 60), (float)(y0 + h - 30) });
+                if (ImGui::Button("OK", ImVec2(120, 0))) ImGui::CloseCurrentPopup();
+
+                ImGui::EndPopup();
+            }
+
+            ImGui::PopStyleColor(3);
+            ImGui::PopStyleVar(2);
+        }
+
+#else
         {
             float w = 590.f;
             float h = 300.f;
@@ -3073,7 +3119,7 @@ namespace rs2
             ImGui::PopStyleColor(3);
             ImGui::PopStyleVar(2);
         }
-
+#endif
         ImGui::PopStyleVar();
         ImGui::PopStyleColor(7);
 
