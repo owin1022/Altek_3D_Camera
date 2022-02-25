@@ -5,14 +5,14 @@
 [![GitHub CI](../../actions/workflows/buildsCI.yaml/badge.svg?branch=development)](../../actions/workflows/buildsCI.yaml)
 
 ## Overview
-**Altek_3D_Camera_SDK™ SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras  and the [T265 tracking camera](./doc/t265.md).
+**Altek_3D_Camera SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras  and the [T265 tracking camera](./doc/t265.md).
 
 
 
 The SDK allows depth and color streaming, and provides intrinsic and extrinsic calibration information.
 The library also offers synthetic streams (pointcloud, depth aligned to color and vise-versa), and a built-in support for [record and playback](./doc/record-and-playback.md) of streaming sessions.
 
-Developer kits containing the necessary hardware to use this library are available for purchase at [store.altek.com](hhttps://store.altek.com.tw/qualcomm/).
+Developer kits containing the necessary hardware to use this library are available for purchase at [store.altek.com](https://store.altek.com.tw/qualcomm/).
 Information about the Altek_3D_Camera technology at [https://www.altek.com.tw/](https://store.altek.com.tw/qualcomm/)
 
 > :open_file_folder: Don't have access to a Altek_3D_Camera? Check-out [sample data](./doc/sample-data.md)
@@ -29,10 +29,8 @@ We will also continue the work to support and develop our Altek open source SDK.
 In the coming future Altek and AL6100 team will focus our new development on advancing innovative technologies that better support our core businesses and 
 
 
-The librealsense port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
-
 ## Download and Install
-* **Download** - The latest releases including the Intel RealSense SDK, Viewer and Depth Quality tools are available at: [**latest releases**](https://github.com/IntelRealSense/librealsense/releases). Please check the [**release notes**](https://github.com/IntelRealSense/librealsense/wiki/Release-Notes) for the supported platforms, new features and capabilities, known issues, how to upgrade the Firmware and more.
+* **Download** - The latest releases including Altek_3D_Camera SDK, Viewer and Depth Quality tools are available at: [**latest releases**](https://github.com/IntelRealSense/librealsense/releases). Please check the [**release notes**](https://github.com/IntelRealSense/librealsense/wiki/Release-Notes) for the supported platforms, new features and capabilities, known issues, how to upgrade the Firmware and more.
 
 * **Install** - You can also install or build from source the SDK (on [Linux](./doc/distribution_linux.md) \ [Windows](./doc/distribution_windows.md) ), connect your AL6100 depth camera and you are ready to start writing your first application.
 
