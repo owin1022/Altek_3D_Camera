@@ -19,7 +19,7 @@ Information about the Altek_3D_Camera technology at [https://www.altek.com.tw/](
 
 ## Special notice from Altek™ regarding the recent press announcement
 
-Altek has decided to focus on AI Camera business and is announcing IOT-related product, and Tracking product lines this year. Altek will continue to provide Stereo products to its current distribution customers.  Altek will focus our new development on advancing innovative technologies that better support our core businesses.
+Altek has decided to focus on AI Camera business and is announcing IoT-related product, and Tracking product lines this year. Altek will continue to provide Stereo products to its current distribution customers.  Altek will focus our new development on advancing innovative technologies that better support our core businesses.
 The products identified in this notification will be discontinued and unavailable for additional orders after Feb 28, 2022.
 
 The following Stereo Product Lines WILL continue to be supported: AL6100 depth cameras. 
