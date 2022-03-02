@@ -26,8 +26,7 @@ Open Visual Studio 2019 to load project with librealsense2.sln ,compile ,and exe
 
 
 ## Overview
-**Altek_3D_Camera SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras  and the [T265 tracking camera](./doc/t265.md).
-
+**Altek_3D_Camera SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras.
 
 
 The SDK allows depth and color streaming, and provides intrinsic and extrinsic calibration information.
