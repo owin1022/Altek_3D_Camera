@@ -30,8 +30,6 @@ Open Visual Studio 2019 to load project with librealsense2.sln ,compile ,and exe
 
 
 The SDK allows depth and color streaming, and provides intrinsic and extrinsic calibration information.
-The library also offers synthetic streams (pointcloud, depth aligned to color and vise-versa), and a built-in support for [record and playback](./doc/record-and-playback.md) of streaming sessions.
-
 Developer kits containing the necessary hardware to use this library are available for purchase at [store.altek.com](https://store.altek.com.tw/qualcomm/).
 Information about the Altek_3D_Camera technology at [https://www.altek.com.tw/](https://store.altek.com.tw/qualcomm/)
 
