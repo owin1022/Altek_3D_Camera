@@ -4,6 +4,27 @@
 -----------------
 [![GitHub CI](../../actions/workflows/buildsCI.yaml/badge.svg?branch=development)](../../actions/workflows/buildsCI.yaml)
 
+## Build Code Guide on Windows10.
+
+Prerequisite :
+1. Install Cmake 
+https://cmake.org/download/ 
+Windows x64 Installer: Installer tool has changed. Uninstall CMake 3.4 or lower first! 
+------------------------------------------------------------------------------------------------------
+2. Install git 
+https://git-scm.com/download/win 
+
+------------------------------------------------------------------------------------------------------
+3. Install Visual Studio 2019 community 
+https://visualstudio.microsoft.com/zh-hant/thank-you-downloading-visual-studio/?sku=Community&rel=16 
+
+Compile code process:
+Choose input source code/output path and click configure button from Cmake-gui . After configure done withoout errors , click Generate button to generate librealsense2.sln.
+
+Open Visual Studio 2019 to load project with librealsense2.sln and compile it .
+
+
+
 ## Overview
 **Altek_3D_Camera SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras  and the [T265 tracking camera](./doc/t265.md).
 
@@ -22,7 +43,7 @@ Information about the Altek_3D_Camera technology at [https://www.altek.com.tw/](
 Altek has decided to focus on AI Camera business and is announcing IoT-related product, and Tracking product lines this year. Altek will continue to provide Stereo products to its current distribution customers.  Altek will focus our new development on advancing innovative technologies that better support our core businesses.
 The products identified in this notification will be discontinued and unavailable for additional orders after Feb 28, 2022.
 
-The following Stereo Product Lines WILL continue to be supported: AL6100 depth cameras. 
+The following Stereo Product Lines will continue to be supported: AL6100 depth cameras. 
 
 We will also continue the work to support and develop our Altek open source SDK.
 
