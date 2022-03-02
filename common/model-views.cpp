@@ -1265,7 +1265,7 @@ namespace rs2
             auto sensor_profiles = s->get_stream_profiles();
             reverse(begin(sensor_profiles), end(sensor_profiles));
             std::map<int, rs2_format> def_format{ {0, RS2_FORMAT_ANY} };
-            auto default_resolution = std::make_pair(640, 360); // Ken++  Z32
+            auto default_resolution = std::make_pair(1280, 720); // Ken++  Z32
             auto default_fps = 30;
             for (auto&& profile : sensor_profiles)
             {
