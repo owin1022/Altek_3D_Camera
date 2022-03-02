@@ -21,7 +21,7 @@ https://visualstudio.microsoft.com/zh-hant/thank-you-downloading-visual-studio/?
 Compile code process:
 Choose input source code/output path and click configure button from Cmake-gui . After configure done withoout errors , click Generate button to generate librealsense2.sln.
 
-Open Visual Studio 2019 to load project with librealsense2.sln and compile it .
+Open Visual Studio 2019 to load project with librealsense2.sln ,compile ,and execute it .
 
 
 
