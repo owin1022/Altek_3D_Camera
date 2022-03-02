@@ -80,7 +80,7 @@ if (BUILD_EXAMPLES AND BUILD_GLSL_EXTENSIONS)
 endif()
 
 if(BUILD_EXAMPLES)
-    #add_subdirectory(examples)
+    add_subdirectory(examples)
     add_subdirectory(tools)
 elseif(BUILD_TOOLS)
     add_subdirectory(tools)
