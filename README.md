@@ -51,7 +51,7 @@ In the coming future Altek and AL6100 team will focus our new development on adv
 
 
 ## Download and Install
-* **Download** - The latest releases including Altek_3D_Camera SDK, Viewer and Depth Quality tools are available at: [**latest releases**](https://github.com/IntelRealSense/librealsense/releases). Please check the [**release notes**](https://github.com/IntelRealSense/librealsense/wiki/Release-Notes) for the supported platforms, new features and capabilities, known issues, how to upgrade the Firmware and more.
+* **Download** - The latest releases including Altek_3D_Camera SDK, Viewer and Depth Quality tools are available at: [**latest releases**]. Please check the [**release notes**] for the supported platforms, new features and capabilities, known issues, how to upgrade the Firmware and more.
 
 * **Install** - You can also install or build from source the SDK (on [Linux](./doc/distribution_linux.md) \ [Windows](./doc/distribution_windows.md) ), connect your AL6100 depth camera and you are ready to start writing your first application.
 
