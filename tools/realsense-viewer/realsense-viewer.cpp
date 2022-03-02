@@ -300,7 +300,7 @@ int main(int argc, const char** argv) try
     context ctx;
     //ux_window window("Intel RealSense Viewer", ctx);
 
-	ux_window window("Altek Robot Eye Viewer", ctx); // Ken++
+	ux_window window("Altek 3D Camera Viewer", ctx); // Ken++
 
     // Create RealSense Context
     device_changes devices_connection_changes(ctx);
