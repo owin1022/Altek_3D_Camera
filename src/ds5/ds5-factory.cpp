@@ -423,15 +423,15 @@ namespace librealsense
             auto usb_spec = get_usb_spec();
             if (usb_spec >= platform::usb3_type || usb_spec == platform::usb_undefined)
             {
-                tags.push_back({ RS2_STREAM_DEPTH, -1, 640, 360, RS2_FORMAT_Z32, 30, profile_tag::PROFILE_TAG_SUPERSET | profile_tag::PROFILE_TAG_DEFAULT });
-                tags.push_back({ RS2_STREAM_INFRARED, 1, 640, 360, RS2_FORMAT_Z32, 30, profile_tag::PROFILE_TAG_SUPERSET | profile_tag::PROFILE_TAG_DEFAULT });
-                tags.push_back({ RS2_STREAM_INFRARED, 2, 640, 360, RS2_FORMAT_Z32, 30, profile_tag::PROFILE_TAG_SUPERSET });
+                tags.push_back({ RS2_STREAM_DEPTH, -1, 1280, 720, RS2_FORMAT_Z16, 30, profile_tag::PROFILE_TAG_SUPERSET | profile_tag::PROFILE_TAG_DEFAULT });
+                tags.push_back({ RS2_STREAM_INFRARED, 1, 1280, 720, RS2_FORMAT_RGB8, 30, profile_tag::PROFILE_TAG_SUPERSET | profile_tag::PROFILE_TAG_DEFAULT });
+                tags.push_back({ RS2_STREAM_INFRARED, 2, 1280, 720, RS2_FORMAT_RGB8, 30, profile_tag::PROFILE_TAG_SUPERSET });
             }
             else
             {
-                tags.push_back({ RS2_STREAM_DEPTH, -1, 640, 360, RS2_FORMAT_Z32, 20, profile_tag::PROFILE_TAG_SUPERSET | profile_tag::PROFILE_TAG_DEFAULT });
-                tags.push_back({ RS2_STREAM_INFRARED, 1, 640, 360, RS2_FORMAT_Z32, 20, profile_tag::PROFILE_TAG_SUPERSET | profile_tag::PROFILE_TAG_DEFAULT });
-                tags.push_back({ RS2_STREAM_INFRARED, 2, 640, 360, RS2_FORMAT_Z32, 20, profile_tag::PROFILE_TAG_SUPERSET });
+                tags.push_back({ RS2_STREAM_DEPTH, -1, 640, 480, RS2_FORMAT_Z16, 15, profile_tag::PROFILE_TAG_SUPERSET | profile_tag::PROFILE_TAG_DEFAULT });
+                tags.push_back({ RS2_STREAM_INFRARED, 1, 640, 480, RS2_FORMAT_RGB8, 15, profile_tag::PROFILE_TAG_SUPERSET | profile_tag::PROFILE_TAG_DEFAULT });
+                tags.push_back({ RS2_STREAM_INFRARED, 2, 640, 480, RS2_FORMAT_RGB8, 15, profile_tag::PROFILE_TAG_SUPERSET });
             }
             return tags;
 			
