@@ -139,8 +139,8 @@ namespace librealsense
 
         try
         {
-            LOG_INFO( "entering to update state, device disconnect is expected" );
-            command cmd( ds::DFU );
+            LOG_INFO("entering to update state, device disconnect is expected");
+            command cmd(ds::DFU);
             cmd.param1 = 1;
             _hw_monitor->send( cmd );
 
@@ -298,7 +298,7 @@ namespace librealsense
     void ds5_device::al3d_fw_update_start(const std::vector<uint8_t>& image, update_progress_callback_ptr callback, int update_mode)
     {
 
-        auto& raw_depth_sensor = get_raw_depth_sensor();      
+        auto& raw_depth_sensor = get_raw_depth_sensor();
         auto al3d_fw_upgrade = std::make_shared<al3d_fw_update>(raw_depth_sensor);
        
         switch (update_mode)
@@ -937,9 +937,17 @@ namespace librealsense
         auto optic_serial = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset);
         auto asic_serial = _hw_monitor->get_module_serial_string(gvd_buff, module_asic_serial_offset);
         auto fwv = _hw_monitor->get_firmware_version_string(gvd_buff, camera_fw_version_offset);
+   
+#if 0 
         _fw_version = firmware_version(fwv);
-
         _recommended_fw_version = firmware_version(D4XX_RECOMMENDED_FIRMWARE_VERSION);
+
+#else   //for al3d debug
+        _fw_version = firmware_version(fwv);
+        auto fwv_debug = _hw_monitor->get_firmware_version_string(gvd_buff, module_asic_serial_offset);
+        _recommended_fw_version = firmware_version(fwv_debug); //for al3d debug
+#endif
+        
         if (_fw_version >= firmware_version("5.10.4.0"))
             _device_capabilities = parse_device_capabilities();
 
