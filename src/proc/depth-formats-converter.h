@@ -46,11 +46,11 @@ namespace librealsense
     class al_converter : public interleaved_functional_processing_block
     {
     public:
-		al_converter::al_converter(int depth_idx = 0, int left_idx = 1, int right_idx = 2 ) :
+		al_converter(int depth_idx = 0, int left_idx = 1, int right_idx = 2 ) :
 			al_converter("AL Converter", depth_idx, left_idx, right_idx) {}
 
     protected:
-		al_converter::al_converter(const char * name, int depth_idx, int left_idx, int right_idx)
+		al_converter(const char * name, int depth_idx, int left_idx, int right_idx)
 			: interleaved_functional_processing_block(name, RS2_FORMAT_Z32, 	RS2_FORMAT_Z16, RS2_STREAM_DEPTH, RS2_EXTENSION_VIDEO_FRAME, 0,
 																				RS2_FORMAT_Y8, RS2_STREAM_INFRARED, RS2_EXTENSION_VIDEO_FRAME, 1,
 																				RS2_FORMAT_Y8, RS2_STREAM_INFRARED, RS2_EXTENSION_VIDEO_FRAME, 2) {}
