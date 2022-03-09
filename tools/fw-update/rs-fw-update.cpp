@@ -135,6 +135,7 @@ int main(int argc, char** argv) try
     rs2::update_device new_fw_update_device;
 
     bool done = false;
+    bool al3d_device = false;  //for al3d
 
     CmdLine cmd("librealsense rs-fw-update tool", ' ', RS2_API_VERSION_STR);
 
@@ -295,6 +296,13 @@ int main(int argc, char** argv) try
         device_found = true;
         auto fw = d.get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION);
 
+        //for al3d
+        std::string device_pid = d.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
+        if (device_pid == "99AA")
+        {
+            al3d_device = true;
+        }
+
         if (backup_arg.isSet())
         {
             std::cout << std::endl << "backing-up device flash: " << std::endl;
@@ -322,47 +330,68 @@ int main(int argc, char** argv) try
         std::cout << std::endl << "updating device: " << std::endl;
         print_device_info(d);
 
-        if (unsigned_arg.isSet())
+        if (al3d_device)  //for al3d fw_update
         {
-            std::cout << std::endl << "firmware update started" << std::endl << std::endl;
+            std::cout << std::endl << "al3d firmware update started" << std::endl << std::endl;
 
             if (ISATTY(FILENO(stdout)))
             {
                 d.as<rs2::updatable>().update_unsigned(fw_image, [&](const float progress)
                     {
-                        printf("\rfirmware update progress: %d[%%]", (int)(progress * 100));
-                    });
+                        printf("\ral3d firmware update progress: %d[%%]", (int)(progress * 100));
+                    }, AL3D_UNSIGNED_UPDATE_MODE_FULL);  //for al3d fw update
             }
             else
-                d.as<rs2::updatable>().update_unsigned(fw_image, [&](const float progress){});
-                
-            std::cout << std::endl << std::endl << "firmware update done" << std::endl;
+                d.as<rs2::updatable>().update_unsigned(fw_image, [&](const float progress) {}, AL3D_UNSIGNED_UPDATE_MODE_FULL); //for al3d fw update
+
+            std::cout << std::endl << std::endl << "al3d firmware update done" << std::endl;
         }
         else
         {
-            auto upd = d.as<rs2::updatable>();
-            // checking compatibility bewtween firmware and device
-            if (!upd.check_firmware_compatibility(fw_image))
+
+        
+            if (unsigned_arg.isSet())
             {
-                std::stringstream ss;
-                ss << "This firmware version is not compatible with ";
-                ss << d.get_info(RS2_CAMERA_INFO_NAME) << std::endl;
-                std::cout << std::endl << ss.str() << std::endl;
-                return EXIT_FAILURE;
+                std::cout << std::endl << "firmware update started" << std::endl << std::endl;
+
+                if (ISATTY(FILENO(stdout)))
+                {
+                    d.as<rs2::updatable>().update_unsigned(fw_image, [&](const float progress)
+                        {
+                            printf("\rfirmware update progress: %d[%%]", (int)(progress * 100));
+                        }); 
+                }
+                else
+                    d.as<rs2::updatable>().update_unsigned(fw_image, [&](const float progress){}); 
+                
+                std::cout << std::endl << std::endl << "firmware update done" << std::endl;
             }
-
-            upd.enter_update_state();
-
-            std::unique_lock<std::mutex> lk(mutex);
-            if (!cv.wait_for(lk, std::chrono::seconds(WAIT_FOR_DEVICE_TIMEOUT), [&] { return new_fw_update_device; }))
+            else
             {
-                std::cout << std::endl << "failed to locate a device in FW update mode" << std::endl;
-                return EXIT_FAILURE;
-            }
+                auto upd = d.as<rs2::updatable>();
+                // checking compatibility bewtween firmware and device
+                if (!upd.check_firmware_compatibility(fw_image))
+                {
+                    std::stringstream ss;
+                    ss << "This firmware version is not compatible with ";
+                    ss << d.get_info(RS2_CAMERA_INFO_NAME) << std::endl;
+                    std::cout << std::endl << ss.str() << std::endl;
+                    return EXIT_FAILURE;
+                }
 
-            update(new_fw_update_device, fw_image);
-            done = true;
-            break;
+                upd.enter_update_state();
+
+                std::unique_lock<std::mutex> lk(mutex);
+                if (!cv.wait_for(lk, std::chrono::seconds(WAIT_FOR_DEVICE_TIMEOUT), [&] { return new_fw_update_device; }))
+                {
+                    std::cout << std::endl << "failed to locate a device in FW update mode" << std::endl;
+                    return EXIT_FAILURE;
+                }
+
+                update(new_fw_update_device, fw_image);
+                done = true;
+                break;
+            }
         }
     }
 
