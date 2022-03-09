@@ -775,11 +775,13 @@ namespace librealsense
 
     std::vector<uint8_t> ds5_device::get_new_calibration_table() const
     {
-        if (_fw_version >= firmware_version("5.11.9.5"))
+     
+        if ((_fw_version >= firmware_version("5.11.9.5"))&& (_pid != ds::AL3D_PID)) //for al3d
         {
             command cmd(ds::RECPARAMSGET);
             return _hw_monitor->send(cmd);
         }
+
         return {};
     }
 
