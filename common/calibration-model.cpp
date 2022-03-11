@@ -12,7 +12,10 @@ bool calibration_model::supports()
     bool is_d400 = dev.supports(RS2_CAMERA_INFO_PRODUCT_LINE) ?
         std::string(dev.get_info(RS2_CAMERA_INFO_PRODUCT_LINE)) == "D400" : false;
 
-    return dev.is<rs2::auto_calibrated_device>() && is_d400;
+    std::string pidstr(dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID));
+    bool is_al_roboteye = pidstr.compare("99AA") == 0 ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
+
+    return dev.is<rs2::auto_calibrated_device>() && (is_d400 || is_al_roboteye);
 }
 
 calibration_model::calibration_model(rs2::device dev) : dev(dev) 
@@ -128,7 +131,13 @@ namespace helpers
 void calibration_model::update(ux_window& window, std::string& error_message)
 {
     const auto window_name = "Calibration Window";
-
+    std::string pidstr(dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID));
+    bool is_al_roboteye = pidstr.compare("99AA") == 0 ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
+    if (is_al_roboteye)
+    {
+        update_al(window, error_message);
+        return;
+    }
     if (to_open)
     {
         try
@@ -143,7 +152,7 @@ void calibration_model::update(ux_window& window, std::string& error_message)
         }
         to_open = false;
     }
-
+    //auto table_size = sizeof(librealsense::ds::coefficients_table); <-- aston, here get 576bytes size of rs coefficients_table.
     auto table = (librealsense::ds::coefficients_table*)_calibration.data();
     auto orig_table = (librealsense::ds::coefficients_table*)_original.data();
     bool changed = false;
@@ -389,6 +398,379 @@ void calibration_model::update(ux_window& window, std::string& error_message)
         draw_float("PPX", table->rect_params[selected_resolution].z, orig_table->rect_params[selected_resolution].z, changed);
         ImGui::SameLine();
         draw_float("PPY", table->rect_params[selected_resolution].w, orig_table->rect_params[selected_resolution].w, changed);
+
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+
+        ImGui::PopItemWidth();
+
+        if (ImGui::IsWindowHovered()) window.set_hovered_over_input();
+
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
+
+        ImGui::SetCursorScreenPos({ (float)(x0 + 10), (float)(y0 + h - 30) });
+        if (ImGui::Checkbox("I know what I'm doing", &_accept))
+        {
+            config_file::instance().set(configurations::calibration::enable_writing, _accept);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("%s", "Changing calibration will affect depth quality. Changes are persistent.\nThere is an option to get back to factory calibration, but it maybe worse than current calibration\nBefore writing to flash, we strongly recommend to make a file backup");
+        }
+
+        ImGui::SetCursorScreenPos({ (float)(x0 + w - 230), (float)(y0 + h - 30) });
+
+        if (ImGui::Button("Cancel", ImVec2(100, 25)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            window.link_hovered();
+            ImGui::SetTooltip("%s", "Close without saving any changes");
+        }
+        ImGui::SameLine();
+
+        auto streams = dev.query_sensors()[0].get_active_streams();
+        if (_accept && streams.size())
+        {
+            if (ImGui::Button(u8"\uF2DB  Write Table1", ImVec2(120, 25)))
+            {
+                try
+                {
+                    auto actual_data = _calibration.data() + sizeof(librealsense::ds::table_header);
+                    auto actual_data_size = _calibration.size() - sizeof(librealsense::ds::table_header);
+                    auto crc = helpers::calc_crc32(actual_data, actual_data_size);
+                    table->header.crc32 = crc;
+                    dev.as<rs2::auto_calibrated_device>().set_calibration_table(_calibration);
+                    dev.as<rs2::auto_calibrated_device>().write_calibration();
+                    _original = _calibration;
+                    ImGui::CloseCurrentPopup();
+                }
+                catch (const std::exception& ex)
+                {
+                    error_message = ex.what();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (ImGui::IsItemHovered())
+            {
+                window.link_hovered();
+                ImGui::SetTooltip("%s", "Write selected calibration table to the device");
+            }
+        }
+        else
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, grey);
+            ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, grey);
+
+            ImGui::Button(u8"\uF2DB  Write Table2", ImVec2(120, 25));
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("%s", "Write selected calibration table to the device. For advanced users");
+            }
+
+            ImGui::PopStyleColor(2);
+        }
+
+        if (changed && streams.size())
+        {
+            try
+            {
+                dev.as<rs2::auto_calibrated_device>().set_calibration_table(_calibration);
+            }
+            catch (const std::exception&)
+            {
+                try
+                {
+                    dev.query_sensors()[0].close();
+                    dev.query_sensors()[0].open(streams);
+                    dev.as<rs2::auto_calibrated_device>().set_calibration_table(_calibration);
+                }
+                catch (const std::exception& ex)
+                {
+                    error_message = ex.what();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        }
+
+        if (ImGui::IsWindowHovered()) window.set_hovered_over_input();
+
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar(2);
+}
+
+librealsense::float3x3 transfer_to_float3x3_al(double *src)
+{
+    librealsense::float3x3 dst;
+    dst.x.x = (float)src[0];
+    dst.x.y = (float)src[1];
+    dst.x.z = (float)src[2];
+    dst.y.x = (float)src[3];
+    dst.y.y = (float)src[4];
+    dst.y.z = (float)src[5];
+    dst.z.x = (float)src[6];
+    dst.z.y = (float)src[7];
+    dst.z.z = (float)src[8];
+
+    return dst;
+}
+
+void calibration_model::update_al(ux_window& window, std::string& error_message)
+{
+    const auto window_name = "altek Calibration Window";
+
+    if (to_open)
+    {
+        try
+        {
+            _calibration = dev.as<rs2::auto_calibrated_device>().get_calibration_table();
+            _original = _calibration;
+            //auto s1 = _calibration.size();     // aston, real-sense data format is 512bytes.
+            //auto s2 = _calibration.capacity(); // aston, real-sense data format is 512bytes.
+            ImGui::OpenPopup(window_name);
+        }
+        catch (std::exception e)
+        {
+            error_message = e.what();
+        }
+        to_open = false;
+    }
+    //auto tbl_size = sizeof(librealsense::ds::coefficients_table);               // aston, real-sense data format is 576bytes.
+    //auto s2 = _calibration.capacity();                                          // aston, real-sense data format is 512bytes.
+    _calibration.resize(sizeof(librealsense::ds::coefficients_table_al),0);
+    _original.resize(sizeof(librealsense::ds::coefficients_table_al), 0);
+    auto table = (librealsense::ds::coefficients_table_al*)_calibration.data();   // aston, altek data format is 840 (824+16) bytes.
+    auto orig_table = (librealsense::ds::coefficients_table_al*)_original.data();
+    bool changed = false;
+
+    const float w = 620;
+    const float h = 500;
+    const float x0 = std::max(window.width() - w, 0.f) / 2;
+    const float y0 = std::max(window.height() - h, 0.f) / 2;
+    ImGui::SetNextWindowPos({ x0, y0 });
+    ImGui::SetNextWindowSize({ w, h });
+
+    auto flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+
+    ImGui::PushStyleColor(ImGuiCol_PopupBg, sensor_bg);
+    ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, white);
+    ImGui::PushStyleColor(ImGuiCol_Text, light_grey);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 1);
+
+    if (ImGui::BeginPopupModal(window_name, nullptr, flags))
+    {
+        if (error_message != "") ImGui::CloseCurrentPopup();
+
+        std::string title_message = "altek CAMERA CALIBRATION";
+        auto title_size = ImGui::CalcTextSize(title_message.c_str());
+        ImGui::SetCursorPosX(w / 2 - title_size.x / 2);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+        ImGui::PushFont(window.get_large_font());
+        ImGui::PushStyleColor(ImGuiCol_Text, white);
+        ImGui::Text("%s", title_message.c_str());
+        ImGui::PopStyleColor();
+        ImGui::PopFont();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+
+        ImGui::SetCursorPosX(w / 2 - 260 / 2);
+        if (ImGui::Button(u8"\uF07C Load...", ImVec2(70, 30)))
+        {
+            try
+            {
+                if (auto fn = file_dialog_open(file_dialog_mode::open_file, "altek Calibration\0*.bin\0", nullptr, nullptr))
+                {
+                    //config_file cf(fn);
+                    FILE* fpi;
+                    size_t ret_size = 0;
+                    //auto tblsize = sizeof(table);           // table  = 8bytes
+                    //auto tblesizep = sizeof(*table);        // *table = 840bytes
+                    //auto coffsize = sizeof(librealsense::ds::coefficients_table_al); // coffsize = 840bytes
+                    //auto tblcvbinsize = sizeof(table->al_cvbin); // table->al_cvbin size = 824bytes.
+                    fpi = fopen(fn, "rb+");
+                    if (NULL == fpi)
+                    {
+                        fclose(fpi);
+                        return;
+                    }
+                    OpenCVK_824bytes* pcvbin = new OpenCVK_824bytes;
+                    ret_size = fread(pcvbin, 1, sizeof(OpenCVK_824bytes), fpi);
+                    fclose(fpi);
+                    table->al_cvbin = *pcvbin;
+                    // Remember to update header.
+                    // table->header = xxx header.
+                    delete pcvbin;
+                }
+                changed = true;
+            }
+            catch (const std::exception& ex)
+            {
+                error_message = ex.what();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        if (ImGui::IsItemHovered())
+        {
+            window.link_hovered();
+            ImGui::SetTooltip("%s", "Load calibration from file");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(u8"\uF0C7 Save As...", ImVec2(100, 30)))
+        {
+            try
+            {
+                if (auto fn = file_dialog_open(file_dialog_mode::save_file, "altek Calibration\0*.bin\0", nullptr, nullptr))
+                {
+                    //config_file cf(fn);
+                    FILE* fpo;
+                    size_t ret_size = 0;
+                    fpo = fopen(fn, "wb");
+                    if (NULL == fpo)
+                    {
+                        fclose(fpo);
+                        return;
+                    }
+                    OpenCVK_824bytes* pcvbin = new OpenCVK_824bytes;
+                    *pcvbin = table->al_cvbin;
+                    // Remember to update header.
+                    // xxx header = table->header.
+                    ret_size = fwrite(pcvbin, 1, sizeof(OpenCVK_824bytes), fpo);
+                    fclose(fpo);
+                    delete pcvbin;
+                }
+            }
+            catch (const std::exception& ex)
+            {
+                error_message = ex.what();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        if (ImGui::IsItemHovered())
+        {
+            window.link_hovered();
+            ImGui::SetTooltip("%s", "Save calibration image to file");
+        }
+        ImGui::SameLine();
+        if (_accept)
+        {
+            if (ImGui::Button(u8"\uF275 Restore Factory", ImVec2(115, 30)))
+            {
+                try
+                {
+                    dev.as<rs2::auto_calibrated_device>().reset_to_factory_calibration();
+                    _calibration = dev.as<rs2::auto_calibrated_device>().get_calibration_table();
+                    _original = _calibration;
+                    changed = true;
+                }
+                catch (const std::exception& ex)
+                {
+                    error_message = ex.what();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            if (ImGui::IsItemHovered())
+            {
+                window.link_hovered();
+                ImGui::SetTooltip("%s", "Restore calibration in flash to factory settings");
+            }
+        }
+        else
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, grey);
+            ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, grey);
+
+            ImGui::Button(u8"\uF275 Restore Factory", ImVec2(115, 30));
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("%s", "Write selected calibration table to the device. For advanced users");
+            }
+
+            ImGui::PopStyleColor(2);
+        }
+
+        ImGui::PushStyleColor(ImGuiCol_ChildWindowBg, dark_sensor_bg);
+
+        ImGui::BeginChild("##CalibData", ImVec2(w - 15, h - 110), true);
+
+        ImGui::SetCursorPosX(10);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+
+        ImGui::Text("Stereo Baseline(mm):"); ImGui::SameLine();
+        ImGui::SetCursorPosX(200);
+
+        ImGui::PushItemWidth(120);
+        auto tbl = (float)(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_eBaseline);
+        draw_float("Baseline", tbl, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_eBaseline, changed);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+        ImGui::PopItemWidth();
+
+        draw_float4x4("m_aeH_Main", transfer_to_float3x3_al(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main),
+                                    transfer_to_float3x3_al(orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main), changed);
+        draw_float4x4("m_aeH_Sub", transfer_to_float3x3_al(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Sub),
+                                   transfer_to_float3x3_al(orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Sub), changed);
+        draw_float4x4("m_aeR_Main", transfer_to_float3x3_al(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeR_Main),
+                                    transfer_to_float3x3_al(orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeR_Main), changed);
+        draw_float4x4("m_aeR_Sub", transfer_to_float3x3_al(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeR_Sub),
+                                   transfer_to_float3x3_al(orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeR_Sub), changed);
+        
+        ImGui::SetCursorPosX(10);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+
+        ImGui::Text("Rectified Resolution:"); ImGui::SameLine();
+        ImGui::SetCursorPosX(200);
+
+        std::vector<std::string> resolution_names;
+        std::vector<const char*> resolution_names_char;
+        std::vector<int> resolution_offset;
+        for (int i = 0; i < librealsense::ds::max_ds5_rect_resolutions; i++)
+        {
+            auto xy = librealsense::ds::resolutions_list[(librealsense::ds::ds5_rect_resolutions)i];
+            int w = xy.x; int h = xy.y;
+            if (w != 0) {
+                resolution_offset.push_back(i);
+                std::string name = to_string() << w << " x " << h;
+                resolution_names.push_back(name);
+            }
+        }
+        for (size_t i = 0; i < resolution_offset.size(); i++)
+        {
+            resolution_names_char.push_back(resolution_names[i].c_str());
+        }
+
+        ImGui::PushItemWidth(120);
+        //ImGui::Combo("##RectifiedResolutions", &selected_resolution, resolution_names_char.data(), int(resolution_names_char.size()));
+        auto tcwm = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Main;
+        auto tcwh = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Main;
+        draw_float("RectResX", tcwm, orig_table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Main, changed);
+        ImGui::SameLine();
+        draw_float("RectResY", tcwh, orig_table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Main, changed);
+
+        ImGui::SetCursorPosX(10);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+
+        ImGui::Text("Focal Length:"); ImGui::SameLine();
+        ImGui::SetCursorPosX(200);
+
+        auto tefxr = (float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efx_rec;
+        auto tefyr = (float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efy_rec;
+        draw_float("FocalX", tefxr, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efx_rec, changed);
+        ImGui::SameLine();
+        draw_float("FocalY", tefyr, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efy_rec, changed);
+
+        ImGui::SetCursorPosX(10);
+        ImGui::Text("Principal Point:"); ImGui::SameLine();
+        ImGui::SetCursorPosX(200);
+
+        auto tecxr = (float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecx_rec;
+        auto tecyr = (float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecy_rec;
+        draw_float("PPX", tecxr, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecx_rec, changed);
+        ImGui::SameLine();
+        draw_float("PPY", tecyr, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecy_rec, changed);
 
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 

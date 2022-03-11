@@ -5259,13 +5259,16 @@ namespace rs2
         bool is_d400 = s->supports(RS2_CAMERA_INFO_PRODUCT_LINE) ?
             std::string(s->get_info(RS2_CAMERA_INFO_PRODUCT_LINE)) == "D400" : false;
 
+        std::string pidstr(dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID));
+        bool is_al_roboteye = pidstr.compare("99AA") == 0 ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
+
         std::string fw_version = s->supports(RS2_CAMERA_INFO_FIRMWARE_VERSION) ?
             s->get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION) : "";
 
         bool supported_fw = s->supports(RS2_CAMERA_INFO_FIRMWARE_VERSION) ?
             is_upgradeable("05.11.12.0", fw_version) : false;
 
-        return s->is<rs2::depth_sensor>() && is_d400 && supported_fw;
+        return s->is<rs2::depth_sensor>() && (is_d400 || is_al_roboteye) && supported_fw;
         // TODO: Once auto-calib makes it into the API, switch to querying camera info
     }
 

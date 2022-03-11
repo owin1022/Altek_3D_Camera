@@ -19,6 +19,8 @@ namespace rs2
 
         void update(ux_window& window, std::string& error_message);
 
+        void update_al(ux_window& window, std::string& error_message);
+
         void open() { to_open = true; }
 
     private:

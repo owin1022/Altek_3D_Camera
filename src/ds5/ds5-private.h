@@ -6,6 +6,7 @@
 #include "backend.h"
 #include "types.h"
 #include "fw-update/fw-update-unsigned.h"
+#include "altek/alOpenCVK.h"
 
 #include <map>
 #include <iomanip>
@@ -390,6 +391,12 @@ namespace librealsense
             uint8_t             reserved1[88];
             float4              rect_params[max_ds5_rect_resolutions];
             uint8_t             reserved2[64];
+        };
+
+        struct coefficients_table_al
+        {
+            table_header        header;
+            OpenCVK_824bytes    al_cvbin;
         };
 
         struct new_calibration_item

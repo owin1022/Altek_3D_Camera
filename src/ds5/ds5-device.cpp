@@ -1345,7 +1345,15 @@ namespace librealsense
         register_info(RS2_CAMERA_INFO_DEBUG_OP_CODE, std::to_string(static_cast<int>(fw_cmd::GLD)));
         register_info(RS2_CAMERA_INFO_ADVANCED_MODE, ((advanced_mode) ? "YES" : "NO"));
         register_info(RS2_CAMERA_INFO_PRODUCT_ID, pid_hex_str);
-        register_info(RS2_CAMERA_INFO_PRODUCT_LINE, "D400");
+
+        //if (_pid == AL3D_PID) //if (_pid == RBEYE_PID)
+        //{
+        //    register_info(RS2_CAMERA_INFO_PRODUCT_LINE, "alRobotEye");
+        //}
+        //else
+        {
+            register_info(RS2_CAMERA_INFO_PRODUCT_LINE, "D400");
+        }
         register_info(RS2_CAMERA_INFO_RECOMMENDED_FIRMWARE_VERSION, _recommended_fw_version);
         register_info(RS2_CAMERA_INFO_CAMERA_LOCKED, _is_locked ? "YES" : "NO");
 
