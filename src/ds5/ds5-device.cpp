@@ -763,8 +763,19 @@ namespace librealsense
     float ds5_device::get_stereo_baseline_mm() const
     {
         using namespace ds;
-        auto table = check_calib<coefficients_table>(*_coefficients_table_raw);
-        return fabs(table->baseline);
+
+        if ((_pid == ds::AL3D_PID))   //al3d
+        {
+            auto table = check_calib<coefficients_table_al>(*_coefficients_table_raw);
+            auto al_baseline = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_eBaseline;
+            return fabs(al_baseline);
+        }
+        else 
+        {
+            auto table = check_calib<coefficients_table>(*_coefficients_table_raw);
+            return fabs(table->baseline);
+        }
+       
     }
 
     std::vector<uint8_t> ds5_device::get_raw_calibration_table(ds::calibration_table_id table_id) const
