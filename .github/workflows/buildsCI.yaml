@@ -50,7 +50,7 @@ jobs:
         cmake --build . --config ${{env.LRS_BUILD_CONFIG}} -- -m    
 
     - name: Generate build number
-      uses: einaregilsson/build-number@v3
+      uses: einaregilsson/v.0.@v3
       with:
         token: ${{secrets.github_token}}        
     
