@@ -32,6 +32,18 @@ jobs:
        cd scripts && ./api_check.sh && cd ..
        mkdir build
 
+    - name: package-version-to-git-tag
+      id: create_release
+      uses: zendesk/action-create-release@v1
+      with:
+        # tag_name: "0.1.0"
+        auto_increment_type: patch
+        #release_name: Release ${{ github.ref }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+
     # - name: Configure CMake
     # # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
     # # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -49,15 +61,4 @@ jobs:
     #     cd build
     #     cmake --build . --config ${{env.LRS_BUILD_CONFIG}} -- -m    
 
-    - name: package-version-to-git-tag 
-        id: create_release
-        uses: zendesk/action-create-release@v1
-        with:
-          # tag_name: "0.1.0"
-          auto_increment_type: patch
-          #release_name: Release ${{ github.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-
+    
