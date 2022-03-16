@@ -13,6 +13,9 @@
 #include "../include/librealsense2/hpp/rs_frame.hpp"
 #include "../include/librealsense2/hpp/rs_processing.hpp"
 
+#define _ALTEK_SF_ 1
+#define _ALTEK_SF_VERSION_ V1.0
+
 namespace librealsense
 {
     class spatial_filter : public depth_processing_block
@@ -27,33 +30,55 @@ namespace librealsense
         rs2::frame process_frame(const rs2::frame_source& source, const rs2::frame& f) override;
 
         template <typename T>
-        void dxf_smooth(void *frame_data, float alpha, float delta, int iterations)
-        {
-            static_assert((std::is_arithmetic<T>::value), "Spatial filter assumes numeric types");
-            bool fp = (std::is_floating_point<T>::value);
+		void dxf_smooth(void *frame_data, float alpha, float delta, int iterations)
+		{
+#if _ALTEK_SF_
+			if (_extension_type == RS2_EXTENSION_DEPTH_FRAME)
+			{
+				altek_spatial_filter(frame_data, alpha, delta, iterations);
+			}
+#else
+			static_assert((std::is_arithmetic<T>::value), "Spatial filter assumes numeric types");
+			bool fp = (std::is_floating_point<T>::value);
+			for (int i = 0; i < iterations; i++)
+			{
+				if (fp)
+				{
+					recursive_filter_horizontal_fp(frame_data, alpha, delta);
+					recursive_filter_vertical_fp(frame_data, alpha, delta);
+				}
+				else
+				{
+					recursive_filter_horizontal<T>(frame_data, alpha, delta);
+					recursive_filter_vertical<T>(frame_data, alpha, delta);
+				}
+			}
+			// Disparity domain hole filling requires a second pass over the frame data
+			// For depth domain a more efficient in-place hole filling is performed
+			if (_holes_filling_mode && fp)
+				intertial_holes_fill<T>(static_cast<T*>(frame_data));
+		#endif
+		}
+		
+		void recursive_filter_horizontal_fp(void * image_data, float alpha, float deltaZ);
+		void recursive_filter_vertical_fp(void * image_data, float alpha, float deltaZ);
 
-            for (int i = 0; i < iterations; i++)
-            {
-                if (fp)
-                {
-                    recursive_filter_horizontal_fp(frame_data, alpha, delta);
-                    recursive_filter_vertical_fp(frame_data, alpha, delta);
-                }
-                else
-                {
-                    recursive_filter_horizontal<T>(frame_data, alpha, delta);
-                    recursive_filter_vertical<T>(frame_data, alpha, delta);
-                }
-            }
-
-            // Disparity domain hole filling requires a second pass over the frame data
-            // For depth domain a more efficient in-place hole filling is performed
-            if (_holes_filling_mode && fp)
-                intertial_holes_fill<T>(static_cast<T*>(frame_data));
-        }
-
-        void recursive_filter_horizontal_fp(void * image_data, float alpha, float deltaZ);
-        void recursive_filter_vertical_fp(void * image_data, float alpha, float deltaZ);
+#if _ALTEK_SF_
+//----------ALTEK Spatial Filter Function define----------------------- 
+		//define min kit distance estimation
+		#define _ALTEK_SF_MIN_DIST_ 100     
+		//define max Mean Difference Check Threshold (for disparity)
+		#define _ALTEK_SF_DELTA_MAX_ 10   
+		//spatial filter main fuction
+		void altek_spatial_filter(void * image_data, float alpha, float deltaZ, int iterations);                                                                                                                    
+		//sub function, initial Mean Difference Check Threshold LUT
+		void _altek_sf_mdc_th_init(uint16_t* spatial_delta_LUT);                                                                                                                                                                   
+		//sub function, do Mean Difference Check
+		void _altek_sf_mdc(uint16_t* image, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_w_h, int mask_h_h, int width2, int height2);    
+		//sub function, do Density Check 	
+		void _altek_sf_dc(uint16_t * image, int* cimage, int iterations, int mask_w_h, int mask_h_h, int width2, int height2);                                                          
+//---------------------------------
+#endif
 
         template <typename T>
         void  recursive_filter_horizontal(void * image_data, float alpha, float deltaZ)
@@ -266,7 +291,11 @@ namespace librealsense
     private:
 
         float                   _spatial_alpha_param;
-        uint8_t                 _spatial_delta_param;
+#if _ALTEK_SF_
+		float                 _spatial_delta_param;
+#else
+		uint8_t                 _spatial_delta_param;
+#endif
         uint8_t                 _spatial_iterations;
         float                   _spatial_edge_threshold;
         size_t                  _width, _height, _stride;
@@ -280,6 +309,16 @@ namespace librealsense
         float                   _stereo_baseline_mm;
         uint8_t                 _holes_filling_mode;
         uint8_t                 _holes_filling_radius;
+#if _ALTEK_SF_
+		int32_t      _spatial_delta_LUT_buffer_init_flag;        //if value=0, then malloc for Mean Difference Check Threshold LUT buffer.  if value=1, buffer ready.
+		int32_t      _spatial_delta_LUT_value_init_flag;         //if value=0, then set new value to Mean Difference Check Threshold LUT.  if value=1, Mean Difference Check Threshold LUT is ok.
+		uint16_t* _spatial_delta_LUT;                                        //Mean Difference Check Threshold LUT, need malloc memory (buffer size is 65536*sizeof(uint16)).
+		int32_t      _spatial_integralimage_buffer_init_flag; //if value=1, need free buffer then malloc new buffer for new integral image.
+		int32_t      _spatial_integralimage_size_pixels;          //log depth frame size, (integral image size based on frame size).
+		int32_t      _spatial_integralimage_mask_mode;       //log  spatial filter mask size, (integral image size based on mask size).
+		int32_t*    _spatial_count_integralimage;                   //integral image for valid count depth pixel, need malloc memory (buffer size is (depth width + mask width)* (depth height + mask height)*sizeof(int32).
+		int32_t*   _spatial_value_integralimage;                    // integral image for sum of valid depth value, need malloc memory (buffer size is (depth width + mask width)* (depth height + mask height)*sizeof(int32).
+#endif
     };
     MAP_EXTENSION(RS2_EXTENSION_SPATIAL_FILTER, librealsense::spatial_filter);
 }

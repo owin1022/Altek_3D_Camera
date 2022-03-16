@@ -24,32 +24,56 @@ namespace librealsense
         sp_hf_max_value
     };
 
-    // The weight of the current pixel for smoothing is bounded within [25..100]%
-    const float alpha_min_val = 0.25f;
-    const float alpha_max_val = 1.f;
-    const float alpha_default_val = 0.5f;
-    const float alpha_step = 0.01f;
+#if _ALTEK_SF_
+	//Density Check Threshold: value[0-1], means 0%~100%
+	const float alpha_min_val = 0.00f;
+	const float alpha_max_val = 1.00f;
+	const float alpha_default_val = 0.40f;
+	const float alpha_step = 0.01f;
+	// Mean Difference Check Threshold: value[0-max value], disparity level
+	const float delta_min_val = 0.0f;
+	const float delta_max_val = _ALTEK_SF_DELTA_MAX_*1.0f;
+	const float delta_default_val = 0.35f;
+	const float delta_step = 0.01f;
+	//Density Check iterations: value[0-5], run 0-5 times
+	const uint8_t filter_iter_min = 0;
+	const uint8_t filter_iter_max = 5;
+	const uint8_t filter_iter_def = 2;
+	const uint8_t filter_iter_step = 1;
+	//Mask Size: value[0-4], mask size 3x3 ~ 9x9
+	const uint8_t holes_fill_min = 0;
+	const uint8_t holes_fill_max = 4;
+	const uint8_t holes_fill_step = 1;
+	const uint8_t holes_fill_def = 1;
+#else
+	// The weight of the current pixel for smoothing is bounded within [25..100]%
+	const float alpha_min_val = 0.25f;
+	const float alpha_max_val = 1.f;
+	const float alpha_default_val = 0.5f;
+	const float alpha_step = 0.01f;
 
-    // The depth gradient below which the smoothing will occur as number of depth levels
-    const uint8_t delta_min_val = 1;
-    const uint8_t delta_max_val = 50;
-    const uint8_t delta_default_val = 20;
-    const uint8_t delta_step = 1;
+	// The depth gradient below which the smoothing will occur as number of depth levels
+	const uint8_t delta_min_val = 1;
+	const uint8_t delta_max_val = 50;
+	const uint8_t delta_default_val = 20;
+	const uint8_t delta_step = 1;
 
-    // the number of passes used in the iterative smoothing approach
-    const uint8_t filter_iter_min = 1;
-    const uint8_t filter_iter_max = 5;
-    const uint8_t filter_iter_def = 2;
-    const uint8_t filter_iter_step = 1;
+	// the number of passes used in the iterative smoothing approach
+	const uint8_t filter_iter_min = 1;
+	const uint8_t filter_iter_max = 5;
+	const uint8_t filter_iter_def = 2;
+	const uint8_t filter_iter_step = 1;
 
-    // The holes filling mode
-    const uint8_t holes_fill_min = sp_hf_disabled;
-    const uint8_t holes_fill_max = sp_hf_max_value - 1;
-    const uint8_t holes_fill_step = 1;
-    const uint8_t holes_fill_def = sp_hf_disabled;
+	// The holes filling mode
+	const uint8_t holes_fill_min = sp_hf_disabled;
+	const uint8_t holes_fill_max = sp_hf_max_value - 1;
+	const uint8_t holes_fill_step = 1;
+	const uint8_t holes_fill_def = sp_hf_disabled;
+#endif
 
+#if _ALTEK_SF_
     spatial_filter::spatial_filter() :
-        depth_processing_block("Spatial Filter"),
+        depth_processing_block("Altek Spatial Filter"),
         _spatial_alpha_param(alpha_default_val),
         _spatial_delta_param(delta_default_val),
         _spatial_iterations(filter_iter_def),
@@ -60,92 +84,165 @@ namespace librealsense
         _focal_lenght_mm(0.f),
         _stereo_baseline_mm(0.f),
         _holes_filling_mode(holes_fill_def),
-        _holes_filling_radius(0)
+        _holes_filling_radius(0),
+		_spatial_delta_LUT_buffer_init_flag(0),
+		_spatial_delta_LUT_value_init_flag(0),
+		_spatial_integralimage_buffer_init_flag(0),
+		_spatial_integralimage_size_pixels(0),
+		_spatial_integralimage_mask_mode(-1)
     {
         _stream_filter.stream = RS2_STREAM_DEPTH;
         _stream_filter.format = RS2_FORMAT_Z16;
+		
+		auto spatial_filter_alpha = std::make_shared<ptr_option<float>>(
+			alpha_min_val,
+			alpha_max_val,
+			alpha_step,
+			alpha_default_val,
+			&_spatial_alpha_param, "Alpha is Density threshold");
 
-        auto spatial_filter_alpha = std::make_shared<ptr_option<float>>(
-            alpha_min_val,
-            alpha_max_val,
-            alpha_step,
-            alpha_default_val,
-            &_spatial_alpha_param, "Alpha factor of Exp.moving average, 1 = no filter, 0 = infinite filter");
+		auto spatial_filter_delta = std::make_shared<ptr_option<float>>(
+			delta_min_val,
+			delta_max_val,
+			delta_step,
+			delta_default_val,
+			&_spatial_delta_param, "Delta is Distance threshold(sub-pixel)");
+		spatial_filter_delta->on_set([this, spatial_filter_delta](float val)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
 
-        auto spatial_filter_delta = std::make_shared<ptr_option<uint8_t>>(
-            delta_min_val,
-            delta_max_val,
-            delta_step,
-            delta_default_val,
-            &_spatial_delta_param, "Edge-preserving Threshold");
-        spatial_filter_delta->on_set([this, spatial_filter_delta](float val)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
+			if (!spatial_filter_delta->is_valid(val))
+				throw invalid_value_exception(to_string()
+					<< "Unsupported spatial distance threshold: " << val << " is out of range.");
 
-            if (!spatial_filter_delta->is_valid(val))
-                throw invalid_value_exception(to_string()
-                    << "Unsupported spatial delta: " << val << " is out of range.");
+			_spatial_delta_param = static_cast<float>(val);
+			_spatial_edge_threshold = float(_spatial_delta_param);
+			_spatial_delta_LUT_value_init_flag = 0;
+		});
 
-            _spatial_delta_param = static_cast<uint8_t>(val);
-            _spatial_edge_threshold = float(_spatial_delta_param);
-        });
+		auto holes_filling_mode = std::make_shared<ptr_option<uint8_t>>(
+			holes_fill_min,
+			holes_fill_max,
+			holes_fill_step,
+			holes_fill_def,
+			&_holes_filling_mode, "Filter Size");
+		holes_filling_mode->set_description(sp_hf_disabled, "3x3");
+		holes_filling_mode->set_description(sp_hf_2_pixel_radius, "5x5");
+		holes_filling_mode->set_description(sp_hf_4_pixel_radius, "7x7");
+		holes_filling_mode->set_description(sp_hf_8_pixel_radius, "9x7");
+		holes_filling_mode->set_description(sp_hf_16_pixel_radius, "9x9");
 
-        auto spatial_filter_iterations = std::make_shared<ptr_option<uint8_t>>(
-            filter_iter_min,
-            filter_iter_max,
-            filter_iter_step,
-            filter_iter_def,
-            &_spatial_iterations, "Filtering iterations");
+		auto spatial_filter_iterations = std::make_shared<ptr_option<uint8_t>>(
+			filter_iter_min,
+			filter_iter_max,
+			filter_iter_step,
+			filter_iter_def,
+			&_spatial_iterations, "Density Check iterations");
 
-        auto holes_filling_mode = std::make_shared<ptr_option<uint8_t>>(
-            holes_fill_min,
-            holes_fill_max,
-            holes_fill_step,
-            holes_fill_def,
-            &_holes_filling_mode, "Holes filling mode");
+		register_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, spatial_filter_alpha);
+		register_option(RS2_OPTION_FILTER_SMOOTH_DELTA, spatial_filter_delta);
+		register_option(RS2_OPTION_FILTER_MAGNITUDE, spatial_filter_iterations);
+		register_option(RS2_OPTION_HOLES_FILL, holes_filling_mode);
 
-        holes_filling_mode->set_description(sp_hf_disabled, "Disabled");
-        holes_filling_mode->set_description(sp_hf_2_pixel_radius, "2-pixel radius");
-        holes_filling_mode->set_description(sp_hf_4_pixel_radius, "4-pixel radius");
-        holes_filling_mode->set_description(sp_hf_8_pixel_radius, "8-pixel radius");
-        holes_filling_mode->set_description(sp_hf_16_pixel_radius, "16-pixel radius");
-        holes_filling_mode->set_description(sp_hf_unlimited_radius, "Unlimited");
+#else
+	spatial_filter::spatial_filter() :
+		depth_processing_block("Spatial Filter"),
+		_spatial_alpha_param(alpha_default_val),
+		_spatial_delta_param(delta_default_val),
+		_spatial_iterations(filter_iter_def),
+		_width(0), _height(0), _stride(0), _bpp(0),
+		_extension_type(RS2_EXTENSION_DEPTH_FRAME),
+		_current_frm_size_pixels(0),
+		_stereoscopic_depth(false),
+		_focal_lenght_mm(0.f),
+		_stereo_baseline_mm(0.f),
+		_holes_filling_mode(holes_fill_def),
+		_holes_filling_radius(0)
+	{
+		_stream_filter.stream = RS2_STREAM_DEPTH;
+		_stream_filter.format = RS2_FORMAT_Z16;
+		auto spatial_filter_alpha = std::make_shared<ptr_option<float>>(
+			alpha_min_val,
+			alpha_max_val,
+			alpha_step,
+			alpha_default_val,
+			&_spatial_alpha_param, "Alpha factor of Exp.moving average, 1 = no filter, 0 = infinite filter");
 
-        holes_filling_mode->on_set([this, holes_filling_mode](float val)
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
+		auto spatial_filter_delta = std::make_shared<ptr_option<uint8_t>>(
+			delta_min_val,
+			delta_max_val,
+			delta_step,
+			delta_default_val,
+			&_spatial_delta_param, "Edge-preserving Threshold");
+		spatial_filter_delta->on_set([this, spatial_filter_delta](float val)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
 
-            if (!holes_filling_mode->is_valid(val))
-                throw invalid_value_exception(to_string()
-                    << "Unsupported mode for spatial holes filling selected: value " << val << " is out of range.");
+			if (!spatial_filter_delta->is_valid(val))
+				throw invalid_value_exception(to_string()
+					<< "Unsupported spatial delta: " << val << " is out of range.");
 
-            _holes_filling_mode = static_cast<uint8_t>(val);
-            switch (_holes_filling_mode)
-            {
-            case sp_hf_disabled:
-                _holes_filling_radius = 0;      // disabled
-                break;
-            case sp_hf_unlimited_radius:
-                _holes_filling_radius = 0xff;   // Unrealistic smearing; not particulary useful
-                break;
-            case sp_hf_2_pixel_radius:
-            case sp_hf_4_pixel_radius:
-            case sp_hf_8_pixel_radius:
-            case sp_hf_16_pixel_radius:
-                _holes_filling_radius = 0x1 << _holes_filling_mode; // 2's exponential radius
-                break;
-            default:
-                throw invalid_value_exception(to_string()
-                    << "Unsupported spatial hole-filling requested: value " << _holes_filling_mode << " is out of range.");
-                break;
-            }
-        });
+			_spatial_delta_param = static_cast<uint8_t>(val);
+			_spatial_edge_threshold = float(_spatial_delta_param);
+		});
 
-        register_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, spatial_filter_alpha);
-        register_option(RS2_OPTION_FILTER_SMOOTH_DELTA, spatial_filter_delta);
-        register_option(RS2_OPTION_FILTER_MAGNITUDE, spatial_filter_iterations);
-        register_option(RS2_OPTION_HOLES_FILL, holes_filling_mode);
-    }
+		auto spatial_filter_iterations = std::make_shared<ptr_option<uint8_t>>(
+			filter_iter_min,
+			filter_iter_max,
+			filter_iter_step,
+			filter_iter_def,
+			&_spatial_iterations, "Filtering iterations");
+
+		auto holes_filling_mode = std::make_shared<ptr_option<uint8_t>>(
+			holes_fill_min,
+			holes_fill_max,
+			holes_fill_step,
+			holes_fill_def,
+			&_holes_filling_mode, "Holes filling mode");
+
+		holes_filling_mode->set_description(sp_hf_disabled, "Disabled");
+		holes_filling_mode->set_description(sp_hf_2_pixel_radius, "2-pixel radius");
+		holes_filling_mode->set_description(sp_hf_4_pixel_radius, "4-pixel radius");
+		holes_filling_mode->set_description(sp_hf_8_pixel_radius, "8-pixel radius");
+		holes_filling_mode->set_description(sp_hf_16_pixel_radius, "16-pixel radius");
+		holes_filling_mode->set_description(sp_hf_unlimited_radius, "Unlimited");
+
+		holes_filling_mode->on_set([this, holes_filling_mode](float val)
+		{
+			std::lock_guard<std::mutex> lock(_mutex);
+
+			if (!holes_filling_mode->is_valid(val))
+				throw invalid_value_exception(to_string()
+					<< "Unsupported mode for spatial holes filling selected: value " << val << " is out of range.");
+
+			_holes_filling_mode = static_cast<uint8_t>(val);
+			switch (_holes_filling_mode)
+			{
+			case sp_hf_disabled:
+				_holes_filling_radius = 0;      // disabled
+				break;
+			case sp_hf_unlimited_radius:
+				_holes_filling_radius = 0xff;   // Unrealistic smearing; not particulary useful
+				break;
+			case sp_hf_2_pixel_radius:
+			case sp_hf_4_pixel_radius:
+			case sp_hf_8_pixel_radius:
+			case sp_hf_16_pixel_radius:
+				_holes_filling_radius = 0x1 << _holes_filling_mode; // 2's exponential radius
+				break;
+			default:
+				throw invalid_value_exception(to_string()
+					<< "Unsupported spatial hole-filling requested: value " << _holes_filling_mode << " is out of range.");
+				break;
+			}
+	});
+
+		register_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, spatial_filter_alpha);
+		register_option(RS2_OPTION_FILTER_SMOOTH_DELTA, spatial_filter_delta);
+		register_option(RS2_OPTION_FILTER_MAGNITUDE, spatial_filter_iterations);
+		register_option(RS2_OPTION_HOLES_FILL, holes_filling_mode);
+#endif
+	}
 
     rs2::frame spatial_filter::process_frame(const rs2::frame_source& source, const rs2::frame& f)
     {
@@ -215,6 +312,50 @@ namespace librealsense
             _spatial_edge_threshold = _spatial_delta_param;// (_extension_type == RS2_EXTENSION_DISPARITY_FRAME) ?
                                                            // (_focal_lenght_mm * _stereo_baseline_mm) / float(_spatial_delta_param) : _spatial_delta_param;
         }
+
+#if _ALTEK_SF_
+		//------ LUT buffer malloc ---------------------------------------
+		if (_spatial_delta_LUT_buffer_init_flag == 0)
+		{
+			_spatial_delta_LUT = (uint16_t*)malloc(sizeof(uint16_t) * 65536);
+			_spatial_delta_LUT_buffer_init_flag = 1;
+		}
+		//------ LUT assign value ----------------------------------------
+		if (_spatial_delta_LUT_value_init_flag == 0)
+		{
+			_altek_sf_mdc_th_init(_spatial_delta_LUT);
+			_spatial_delta_LUT_value_init_flag = 1;
+		}
+		//------ integral image remalloc --------------------------------
+		if (_spatial_integralimage_size_pixels != _current_frm_size_pixels  || _spatial_integralimage_mask_mode!= _holes_filling_mode)
+		{
+			int mask_w_h = 4, mask_h_h = 3;
+			switch (_holes_filling_mode)
+			{
+				case 0:			mask_w_h = 1, mask_h_h = 1;		break;
+				case 1:			mask_w_h = 2, mask_h_h = 2;		break;
+				case 2:			mask_w_h = 3, mask_h_h = 3;		break;
+				case 3:			mask_w_h = 4, mask_h_h = 3;		break;
+				case 4:			mask_w_h = 4, mask_h_h = 4;		break;
+				default:			mask_w_h = 2, mask_h_h = 2;		break;
+			}
+			int width2 = static_cast<int>(_width) + mask_w_h * 2 + 1;
+			int height2 = static_cast<int>(_height) + mask_h_h * 2 + 1;
+
+			if (_spatial_integralimage_buffer_init_flag == 1)
+			{
+				free(_spatial_count_integralimage);
+				free(_spatial_value_integralimage);
+			}
+			
+			_spatial_count_integralimage = (int32_t*)malloc(width2*height2 * sizeof(int32_t));
+			_spatial_value_integralimage = (int32_t*)malloc(width2*height2 * sizeof(int32_t));
+			
+			_spatial_integralimage_buffer_init_flag = 1;
+			_spatial_integralimage_size_pixels = static_cast<int32_t>(_current_frm_size_pixels);
+			_spatial_integralimage_mask_mode = _holes_filling_mode;
+		}
+#endif
     }
 
     rs2::frame spatial_filter::prepare_target_frame(const rs2::frame& f, const rs2::frame_source& source)
@@ -484,4 +625,159 @@ namespace librealsense
             u++;
         }
     }
+
+#if _ALTEK_SF_
+	void spatial_filter::altek_spatial_filter(void * image_data, float alpha, float deltaZ, int iterations)
+	{
+		int mask_w_h = 4, mask_h_h = 3;
+		switch (_holes_filling_mode)
+		{
+			case 0:			mask_w_h = 1, mask_h_h = 1;		break;
+			case 1:			mask_w_h = 2, mask_h_h = 2;		break;
+			case 2:			mask_w_h = 3, mask_h_h = 3;		break;
+			case 3:			mask_w_h = 4, mask_h_h = 3;		break;
+			case 4:			mask_w_h = 4, mask_h_h = 4;		break;
+			default:			mask_w_h = 2, mask_h_h = 2;		break;
+		}
+		
+		//------ MDC & DC  buffer initialization ----------------
+		uint16_t* image = reinterpret_cast<uint16_t*>(image_data);
+		int width2 = static_cast<int>(_width) + mask_w_h * 2 + 1;
+		int height2 = static_cast<int>(_height) + mask_h_h * 2 + 1;
+	
+		//------ Apply Filter --------------------------------------
+		_altek_sf_mdc(image, _spatial_delta_LUT, _spatial_value_integralimage, _spatial_count_integralimage, mask_w_h, mask_h_h, width2, height2);
+		_altek_sf_dc(image, _spatial_count_integralimage, iterations, mask_w_h, mask_h_h, width2, height2);
+	}
+
+	void  spatial_filter::_altek_sf_mdc_th_init(uint16_t* spatial_delta_LUT)
+	{
+		float tfb = _focal_lenght_mm*_stereo_baseline_mm;
+		float spatial_delta_hf = _spatial_delta_param / 2;
+		int _max_dist = static_cast<int>(tfb / (_ALTEK_SF_DELTA_MAX_*1.0f) + 0.5);
+		if (_max_dist < 65535)_max_dist = 65534;
+		for (int i = _ALTEK_SF_MIN_DIST_; i <= _max_dist; i++)
+		{
+			float tdisp = tfb / (i*1.0f);
+			spatial_delta_LUT[i] = static_cast<uint16_t>(0.5 + tfb / (tdisp - spatial_delta_hf) - tfb / (tdisp + spatial_delta_hf));
+		}
+		for (int i = 0; i < _ALTEK_SF_MIN_DIST_; i++)
+		{
+			spatial_delta_LUT[i] = spatial_delta_LUT[_ALTEK_SF_MIN_DIST_];
+		}
+		for (int i = _max_dist + 1; i < 65536; i++)
+		{
+			spatial_delta_LUT[i] = spatial_delta_LUT[_max_dist];
+		}
+	}
+
+	void  spatial_filter::_altek_sf_mdc(uint16_t* image, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_w_h, int mask_h_h, int width2, int height2)
+	{
+		memset(timage, 0, width2*height2 * sizeof(int32_t));
+		memset(cimage, 0, width2*height2 * sizeof(int32_t));
+		for (int u = mask_h_h + 1; u < height2 - mask_h_h; u++)
+		{
+			int c_sum = 0;
+			int t_sum = 0;
+			int* cDst = cimage + u * width2;
+			int* imDst = timage + u * width2;
+			uint16_t *imOri = image + (u - mask_h_h - 1) * _width + (-mask_w_h - 1);
+			for (int v = mask_w_h + 1; v < width2 - mask_w_h; v++)
+			{
+				if (imOri[v] > 0)c_sum++;
+				cDst[v] = cDst[v - width2] + c_sum;
+				t_sum += static_cast<int>(imOri[v]);
+				imDst[v] = imDst[v - width2] + t_sum;
+			}
+			for (int v = width2 - mask_w_h; v < width2; v++)
+			{
+				cDst[v] = cDst[v - width2] + c_sum;
+				imDst[v] = imDst[v - width2] + t_sum;
+			}
+		}
+		for (int u = height2 - mask_h_h; u < height2; u++)
+		{
+			int* cDst = cimage + u * width2;
+			int* imDst = timage + u * width2;
+			for (int v = 0; v < width2; v++)
+			{
+				cDst[v] = cDst[v - width2];
+				imDst[v] = imDst[v - width2];
+			}
+		}
+		for (int u = 0; u < _height; u++)
+		{
+			int *cDst1 = cimage + (u)* width2;
+			int *cDst2 = cimage + (u)* width2 + (mask_w_h + mask_w_h + 1);
+			int *cDst3 = cimage + (u + mask_h_h + mask_h_h + 1) * width2;
+			int *cDst4 = cimage + (u + mask_h_h + mask_h_h + 1) * width2 + (mask_w_h + mask_w_h + 1);
+			int *imDst1 = timage + (u)* width2;
+			int *imDst2 = timage + (u)* width2 + (mask_w_h + mask_w_h + 1);
+			int *imDst3 = timage + (u + mask_h_h + mask_h_h + 1) * width2;
+			int *imDst4 = timage + (u + mask_h_h + mask_h_h + 1) * width2 + (mask_w_h + mask_w_h + 1);
+			uint16_t *imOri = image + u * _width;
+			for (int v = 0; v < _width; v++)
+			{
+				int dCnt = cDst1[v] + cDst4[v] - cDst2[v] - cDst3[v];
+				int dDistance_Sum = imDst1[v] + imDst4[v] - imDst2[v] - imDst3[v];
+				int dDistance_Avg = 0;
+				if (imOri[v]> 0)
+				{
+					dDistance_Avg = (dDistance_Sum + (dCnt / 2)) / dCnt;
+					if (abs(dDistance_Avg - static_cast<int>(imOri[v])) >spatial_delta_LUT[dDistance_Avg])
+						imOri[v] = 0;
+				}
+			}
+		}
+	}
+
+	void  spatial_filter::_altek_sf_dc(uint16_t * image, int* cimage, int iterations, int mask_w_h, int mask_h_h, int width2, int height2)
+	{
+		int tmp_Den_Thd = (int)((mask_w_h * 2 + 1)*(mask_h_h * 2 + 1)*_spatial_alpha_param + 0.5f);
+		for (int i = 0; i<(iterations); i++)
+		{
+			memset(cimage, 0, width2*height2 * sizeof(int32_t));
+			for (int u = mask_h_h + 1; u < height2 - mask_h_h; u++)
+			{
+				int c_sum = 0;
+				int* cDst = cimage + u * width2;
+				uint16_t *imOri = image + (u - mask_h_h - 1) * _width + (-mask_w_h - 1);
+				for (int v = mask_w_h + 1; v < width2 - mask_w_h; v++)
+				{
+					if (imOri[v] > 0)c_sum++;
+					cDst[v] = cDst[v - width2] + c_sum;
+				}
+				for (int v = width2 - mask_w_h; v < width2; v++)
+				{
+					cDst[v] = cDst[v - width2] + c_sum;
+				}
+			}
+			for (int u = height2 - mask_h_h; u < height2; u++)
+			{
+				int* cDst = cimage + u * width2;
+				for (int v = 0; v < width2; v++)
+				{
+					cDst[v] = cDst[v - width2];
+				}
+			}
+			for (int u = 0; u < _height; u++)
+			{
+				int *cDst1 = cimage + (u)* width2;
+				int *cDst2 = cimage + (u)* width2 + (mask_w_h + mask_w_h + 1);
+				int *cDst3 = cimage + (u + mask_h_h + mask_h_h + 1) * width2;
+				int *cDst4 = cimage + (u + mask_h_h + mask_h_h + 1) * width2 + (mask_w_h + mask_w_h + 1);
+				uint16_t *imOri = image + u * _width;
+				for (int v = 0; v < _width; v++)
+				{
+					int dCnt = cDst1[v] + cDst4[v] - cDst2[v] - cDst3[v];
+					if (imOri[v]> 0)
+					{
+						if (dCnt < tmp_Den_Thd)
+							imOri[v] = 0;
+					}
+				}
+			}
+		}
+	}
+#endif
 }
