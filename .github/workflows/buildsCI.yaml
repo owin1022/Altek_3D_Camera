@@ -32,7 +32,7 @@ jobs:
        cd scripts && ./api_check.sh && cd ..
        mkdir build
 
-    - name: package-version-to-git-tag
+    - name: package-version-to-git-tag 22
       id: create_release
       uses: zendesk/action-create-release@v1
       with:
