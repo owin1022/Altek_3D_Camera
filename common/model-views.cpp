@@ -4247,12 +4247,22 @@ namespace rs2
         for (auto&& f : first)
         {
             auto first_uid = f.get_profile().unique_id();
+            auto first_index = f.get_profile().stream_index();
             if (auto second_f = second.first_or_default(f.get_profile().stream_type()))
             {
                 auto second_uid = second_f.get_profile().unique_id();
+                auto second_index = second_f.get_profile().stream_index();
 
-                viewer.streams_origin[first_uid] = second_uid;
-                viewer.streams_origin[second_uid] = first_uid;
+                if (first_index == second_index) // aston_20220110, workaround for IR-RGB and IR-depth-RGB preview flicking.
+                {
+                    viewer.streams_origin[first_uid] = second_uid;
+                    viewer.streams_origin[second_uid] = first_uid;
+                }
+                else
+                {
+                    viewer.streams_origin[first_uid] = first_uid;
+                    viewer.streams_origin[second_uid] = second_uid;
+                }
             }
         }
     }
