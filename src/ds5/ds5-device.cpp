@@ -505,10 +505,16 @@ namespace librealsense
             }
             else 
             {
-                return get_intrinsic_by_resolution(
-                    *_owner->_coefficients_table_raw,
-                    ds::calibration_table_id::coefficients_table_id,
-                    profile.width, profile.height);
+                if (_owner->_pid == ds::AL3D_PID)
+                    return get_intrinsic_by_resolution_al3d(
+                        *_owner->_coefficients_table_raw,
+                        ds::calibration_table_id::coefficients_table_id,
+                        profile.width, profile.height);
+                else
+                    return get_intrinsic_by_resolution(
+                        *_owner->_coefficients_table_raw,
+                        ds::calibration_table_id::coefficients_table_id,
+                        profile.width, profile.height);
             }
         }
 
@@ -925,10 +931,22 @@ namespace librealsense
         // Reference CS - Right-handed; positive [X,Y,Z] point to [Left,Up,Forward] accordingly.
         _left_right_extrinsics = std::make_shared<lazy<rs2_extrinsics>>([this]()
             {
-                rs2_extrinsics ext = identity_matrix();
-                auto table = check_calib<coefficients_table>(*_coefficients_table_raw);
-                ext.translation[0] = 0.001f * table->baseline; // mm to meters
-                return ext;
+                if ((_pid == ds::AL3D_PID))   //al3d
+                {
+                    rs2_extrinsics ext = identity_matrix();
+                    auto table = check_calib<coefficients_table_al>(*_coefficients_table_raw);
+                    auto al_baseline = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_eBaseline;
+                    ext.translation[0] = 0.001f * al_baseline; // mm to meters
+                    return ext;
+                }
+                else
+                {
+                    rs2_extrinsics ext = identity_matrix();
+                    auto table = check_calib<coefficients_table>(*_coefficients_table_raw);
+                    ext.translation[0] = 0.001f * table->baseline; // mm to meters
+                    return ext;
+                }
+
             });
 
         environment::get_instance().get_extrinsics_graph().register_same_extrinsics(*_depth_stream, *_left_ir_stream);

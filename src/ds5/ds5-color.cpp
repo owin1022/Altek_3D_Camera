@@ -46,7 +46,11 @@ namespace librealsense
             return get_raw_calibration_table(rgb_calibration_id);
         };
 
-        _color_extrinsic = std::make_shared<lazy<rs2_extrinsics>>([this]() { return from_pose(get_color_stream_extrinsic(*_color_calib_table_raw)); });
+        //for al3d
+        if (_pid == ds::AL3D_PID )
+            _color_extrinsic = std::make_shared<lazy<rs2_extrinsics>>([this]() { return from_pose(get_color_stream_extrinsic_al3d(*_color_calib_table_raw)); });
+        else
+            _color_extrinsic = std::make_shared<lazy<rs2_extrinsics>>([this]() { return from_pose(get_color_stream_extrinsic(*_color_calib_table_raw)); });
         environment::get_instance().get_extrinsics_graph().register_extrinsics(*_color_stream, *_depth_stream, _color_extrinsic);
         register_stream_to_extrinsic_group(*_color_stream, 0);
 
@@ -58,7 +62,7 @@ namespace librealsense
        
         
        
-       #if 0
+       #if 1
 	    auto color_devs_info_mi2 = filter_by_mi(group.uvc_devices, 2);  
         if (_pid == ds::AL3D_PID && color_devs_info_mi2.size() == 1) 
 	   #else //for al3d
@@ -67,7 +71,7 @@ namespace librealsense
         {
            
             // means color end point in part of a separate color sensor (e.g. D435)
-            //color_devs_info = color_devs_info_mi2;
+            color_devs_info = color_devs_info_mi2;
             std::unique_ptr<frame_timestamp_reader> ds5_timestamp_reader_backup(new ds5_timestamp_reader(backend.create_time_service()));
             std::unique_ptr<frame_timestamp_reader> ds5_timestamp_reader_metadata(new ds5_timestamp_reader_from_metadata(std::move(ds5_timestamp_reader_backup)));
 
@@ -305,10 +309,24 @@ namespace librealsense
 
     rs2_intrinsics ds5_color_sensor::get_intrinsics(const stream_profile& profile) const
     {
-        return get_intrinsic_by_resolution(
-            *_owner->_color_calib_table_raw,
-            ds::calibration_table_id::rgb_calibration_id,
-            profile.width, profile.height);
+   
+        auto str_pid = _owner->_pid;
+
+        if (str_pid == ds::AL3D_PID)
+        {
+            return get_intrinsic_by_resolution_al3d(
+                *_owner->_color_calib_table_raw,
+                ds::calibration_table_id::rgb_calibration_id,
+                profile.width, profile.height);
+        }
+        else
+        {
+            return get_intrinsic_by_resolution(
+                *_owner->_color_calib_table_raw,
+                ds::calibration_table_id::rgb_calibration_id,
+                profile.width, profile.height);
+        }
+
     }
 
     stream_profiles ds5_color_sensor::init_stream_profiles()

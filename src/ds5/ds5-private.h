@@ -393,7 +393,15 @@ namespace librealsense
             uint8_t             reserved2[64];
         };
 
+        //al3d
         struct coefficients_table_al
+        {
+            table_header        header;
+            OpenCVK_824bytes    al_cvbin;
+        };
+
+        //al3d
+        struct rgb_table_al
         {
             table_header        header;
             OpenCVK_824bytes    al_cvbin;
@@ -763,9 +771,12 @@ namespace librealsense
         rs2_intrinsics get_intrinsic_fisheye_table(const std::vector<uint8_t>& raw_data, uint32_t width, uint32_t height);
         pose get_fisheye_extrinsics_data(const std::vector<uint8_t>& raw_data);
         pose get_color_stream_extrinsic(const std::vector<uint8_t>& raw_data);
-
         bool try_fetch_usb_device(std::vector<platform::usb_device_info>& devices,
                                          const platform::uvc_device_info& info, platform::usb_device_info& result);
+
+        //al3d
+        pose get_color_stream_extrinsic_al3d(const std::vector<uint8_t>& raw_data);
+        rs2_intrinsics get_intrinsic_by_resolution_al3d(const std::vector<uint8_t>& raw_data, calibration_table_id table_id, uint32_t width, uint32_t height);
 
 
         enum ds5_notifications_types
