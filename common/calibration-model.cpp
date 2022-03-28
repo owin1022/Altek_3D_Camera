@@ -503,20 +503,20 @@ void calibration_model::update(ux_window& window, std::string& error_message)
     ImGui::PopStyleVar(2);
 }
 
-librealsense::float3x3 transfer_to_float3x3_al(double *src)
+librealsense::float3x3 &transfer_to_float3x3_al(double *src)
 {
-    librealsense::float3x3 dst;
-    dst.x.x = (float)src[0];
-    dst.x.y = (float)src[1];
-    dst.x.z = (float)src[2];
-    dst.y.x = (float)src[3];
-    dst.y.y = (float)src[4];
-    dst.y.z = (float)src[5];
-    dst.z.x = (float)src[6];
-    dst.z.y = (float)src[7];
-    dst.z.z = (float)src[8];
+    librealsense::float3x3 *dst = new librealsense::float3x3;
+    dst->x.x = (float)src[0];
+    dst->x.y = (float)src[1];
+    dst->x.z = (float)src[2];
+    dst->y.x = (float)src[3];
+    dst->y.y = (float)src[4];
+    dst->y.z = (float)src[5];
+    dst->z.x = (float)src[6];
+    dst->z.y = (float)src[7];
+    dst->z.z = (float)src[8];
 
-    return dst;
+    return *dst;
 }
 
 void calibration_model::update_al(ux_window& window, std::string& error_message)
