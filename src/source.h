@@ -16,7 +16,8 @@ namespace librealsense
     class LRS_EXTENSION_API frame_source
     {
     public:
-        frame_source(uint32_t max_publish_list_size = 16);
+
+        frame_source(uint32_t max_publish_list_size = 32);
 
         void init(std::shared_ptr<metadata_parser_map> metadata_parsers);
 
