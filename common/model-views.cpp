@@ -1596,7 +1596,7 @@ namespace rs2
 
 					   if (f.first == 1)// Ken ++ demo
 					   {                            
-					   		label = to_string() << "Infrared / RGB " << f.first;
+					   		label = to_string() << "Infrared " << f.first;
 					   }
 											   
                         ImGui::Text("%s", label.c_str());
@@ -1609,7 +1609,7 @@ namespace rs2
 
                        if (f.first == 1) // Ken ++ demo
 					   {                            
-					   		label = to_string() << "Infrared / RGB " << f.first;
+					   		label = to_string() << "Infrared " << f.first;
 					   }
 											   
                         if (ImGui::Checkbox(label.c_str(), &stream_enabled[f.first]))
