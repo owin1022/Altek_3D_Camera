@@ -2090,9 +2090,11 @@ void _glfwPlatformSetWindowIcon(_GLFWwindow* window,
         for (i = 0;  i < count;  i++)
             longCount += 2 + images[i].width * images[i].height;
 
+        
         long* icon = calloc(longCount, sizeof(long));
         long* target = icon;
-
+        if (target)
+        {
         for (i = 0;  i < count;  i++)
         {
             *target++ = images[i].width;
@@ -2115,6 +2117,7 @@ void _glfwPlatformSetWindowIcon(_GLFWwindow* window,
                         longCount);
 
         free(icon);
+        }
     }
     else
     {
