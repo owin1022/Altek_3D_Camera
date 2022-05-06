@@ -128,25 +128,34 @@ namespace librealsense
             intrinsics.width = resolutions_list[resolution].x;
             intrinsics.height = resolutions_list[resolution].y;
 
-            auto table_al = check_calib<ds::coefficients_table_al>(raw_data);
-            float altek_cali_table_width = (float)table_al->al_cvbin.ucOpenCV_440.m_uwCalib_W_Main;
-            float altek_cali_table_height = (float)table_al->al_cvbin.ucOpenCV_440.m_uwCalib_H_Main;
-
-            float depth_ratio_fx =  ((float)width)/altek_cali_table_width;
-            float depth_ratio_fy =  ((float)height)/altek_cali_table_height;
-            float depth_ratio_ppx = ((float)width)/altek_cali_table_width;
-            float depth_ratio_ppy = ((float)height)/altek_cali_table_height;
-
+            auto table = check_calib<ds::coefficients_table_al>(raw_data);
+            float altek_cali_table_width = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Main;
+            float altek_cali_table_height = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Main;
+            float altek_cali_height_offset = 80/2;  // (cali height- sensor output height)2   -->  (800-720)/2
+           
+           
+            float depth_ratio_fx   =  ((float)width)/altek_cali_table_width;
+            float depth_ratio_fy   =  ((float)height)/(altek_cali_table_height-altek_cali_height_offset*2);
+            float depth_ratio_ppx  =  ((float)width)/altek_cali_table_width;
+            float depth_ratio_ppy  =  ((float)height)/(altek_cali_table_height-altek_cali_height_offset*2);
             
-            intrinsics.fx  = ((float)table_al->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efx_rec)*depth_ratio_fx;
-            intrinsics.fy  = ((float)table_al->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efy_rec)*depth_ratio_fy;
-            intrinsics.ppx = ((float)table_al->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecx_rec)*depth_ratio_ppx;
-            intrinsics.ppy = ((float)table_al->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecy_rec)*depth_ratio_ppy;
-
+            intrinsics.fx  = ((float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efx_rec)*depth_ratio_fx;
+            intrinsics.fy  = ((float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efy_rec)*depth_ratio_fy;
+            intrinsics.ppx = ((float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecx_rec)*depth_ratio_ppx;
+            intrinsics.ppy = (((float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecy_rec)*depth_ratio_ppy) - (altek_cali_height_offset*depth_ratio_ppy) ;
             
-            intrinsics.model = RS2_DISTORTION_BROWN_CONRADY;
+            
+            intrinsics.model = RS2_DISTORTION_BROWN_CONRADY; 
             memset(intrinsics.coeffs, 0, sizeof(intrinsics.coeffs));  // All coefficients are zeroed since rectified depth is defined as CS origin
+            //[k1, k2, p1, p2, k3]
+            //intrinsics.coeffs[0] = (float)table_al->al_cvbin.ucOpenCV_440.m_ek1_Sub;
+            //intrinsics.coeffs[1] = (float)table_al->al_cvbin.ucOpenCV_440.m_ek2_Sub;
+            //intrinsics.coeffs[2] = (float)table_al->al_cvbin.ucOpenCV_440.m_ep1_Sub;
+            //intrinsics.coeffs[3] = (float)table_al->al_cvbin.ucOpenCV_440.m_ep2_Sub;
+            //intrinsics.coeffs[4] = (float)table_al->al_cvbin.ucOpenCV_440.m_ek3_Sub;
+
             return intrinsics;
+            
 
 
         }
@@ -232,68 +241,8 @@ namespace librealsense
         {
 
             auto table = check_calib<ds::rgb_table_al>(raw_data);
-#if 0    //ggkk need to check......
-            // Compensate for aspect ratio as the normalized intrinsic is calculated with a single resolution
-            float3x3 intrin;
-            intrin.x.x = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[0];
-            intrin.x.y = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[1];
-            intrin.x.z = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[2];
-            intrin.y.x = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[3];
-            intrin.y.y = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[4];
-            intrin.y.z = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[5];
-            intrin.z.x = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[6];
-            intrin.z.y = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[7];
-            intrin.z.z = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main[8];
-
-            float calib_aspect_ratio = 9.f / 16.f; // shall be overwritten with the actual calib resolution
-
-
-            if (table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Sub && table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Sub)
-                calib_aspect_ratio = float(table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Sub) / float(table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Sub);
-            else
-            {
-                LOG_WARNING("RGB Calibration resolution is not specified, using default 16/9 Aspect ratio");
-            }
-
-            // Compensate for aspect ratio
-            float actual_aspect_ratio = height / (float)width;
-            if (actual_aspect_ratio < calib_aspect_ratio)
-            {
-                intrin(1, 1) *= calib_aspect_ratio / actual_aspect_ratio;
-                intrin(2, 1) *= calib_aspect_ratio / actual_aspect_ratio;
-            }
-            else
-            {
-                intrin(0, 0) *= actual_aspect_ratio / calib_aspect_ratio;
-                intrin(2, 0) *= actual_aspect_ratio / calib_aspect_ratio;
-            }
-
-            // Calculate specific intrinsic parameters based on the normalized intrinsic and the sensor's resolution
-            rs2_intrinsics calc_intrinsic{
-                static_cast<int>(width),
-                static_cast<int>(height),
-                ((1 + intrin(2, 0)) * width) / 2.f,
-                ((1 + intrin(2, 1)) * height) / 2.f,
-                intrin(0, 0) * width / 2.f,
-                intrin(1, 1) * height / 2.f,
-                RS2_DISTORTION_INVERSE_BROWN_CONRADY  // The coefficients shall be use for undistort
-            };
-
-
-            //librealsense::copy(calc_intrinsic.coeffs, table->distortion, sizeof(table->distortion));
-
-            //[k1, k2, p1, p2, k3]
-            calc_intrinsic.coeffs[0] = 0;
-            calc_intrinsic.coeffs[1] = 0;
-            calc_intrinsic.coeffs[2] = 0;
-            calc_intrinsic.coeffs[3] = 0;
-            calc_intrinsic.coeffs[4] = 0;
-
-#else
 
         #if 1
-           
-            
             float altek_cali_table_width = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Sub;
             float altek_cali_table_height = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Sub;
 
@@ -301,7 +250,7 @@ namespace librealsense
             float color_ratio_fy =  ((float)height)/altek_cali_table_height;
             float color_ratio_ppx = ((float)width)/altek_cali_table_width;
             float color_ratio_ppy = ((float)height)/altek_cali_table_height;
-
+            
             rs2_intrinsics calc_intrinsic{
                 static_cast<int>(width),
                 static_cast<int>(height),
@@ -309,7 +258,7 @@ namespace librealsense
                 ((float)table->al_cvbin.ucOpenCV_440.m_euy_Sub)*color_ratio_ppy, /*ppy*/
                 ((float)table->al_cvbin.ucOpenCV_440.m_efx_Sub)*color_ratio_fx, /*focalx*/
                 ((float)table->al_cvbin.ucOpenCV_440.m_efy_Sub)*color_ratio_fy, /*focaly*/
-                RS2_DISTORTION_BROWN_CONRADY //RS2_DISTORTION_INVERSE_BROWN_CONRADY  // The coefficients shall be use for undistort
+                RS2_DISTORTION_BROWN_CONRADY   // The coefficients shall be use for undistort
             };
 
         #else  //for debug
@@ -327,7 +276,6 @@ namespace librealsense
         #endif
 
             //librealsense::copy(calc_intrinsic.coeffs, table->distortion, sizeof(table->distortion));
-
             //[k1, k2, p1, p2, k3]
             calc_intrinsic.coeffs[0] = 0;
             calc_intrinsic.coeffs[1] = 0;
@@ -335,8 +283,15 @@ namespace librealsense
             calc_intrinsic.coeffs[3] = 0;
             calc_intrinsic.coeffs[4] = 0;
 
+            //[k1, k2, p1, p2, k3]
+            //calc_intrinsic.coeffs[0] = (float)table->al_cvbin.ucOpenCV_440.m_ek1_Sub;
+            //calc_intrinsic.coeffs[1] = (float)table->al_cvbin.ucOpenCV_440.m_ek2_Sub;
+            //calc_intrinsic.coeffs[2] = (float)table->al_cvbin.ucOpenCV_440.m_ep1_Sub;
+            //calc_intrinsic.coeffs[3] = (float)table->al_cvbin.ucOpenCV_440.m_ep2_Sub;
+            //calc_intrinsic.coeffs[4] = (float)table->al_cvbin.ucOpenCV_440.m_ek3_Sub;
+
             LOG_DEBUG(endl << array2str((float_4&)(calc_intrinsic.fx, calc_intrinsic.fy, calc_intrinsic.ppx, calc_intrinsic.ppy)) << endl);
-#endif
+
             static rs2_intrinsics ref{};
             if (memcmp(&calc_intrinsic, &ref, sizeof(rs2_intrinsics)))
             {
@@ -624,4 +579,5 @@ namespace librealsense
         }
     } // librealsense::ds
 } // namespace librealsense
+
 
