@@ -641,7 +641,7 @@ namespace librealsense
             // Wait up to 10*gap for the missing stream frame to arrive -- anything more and we
             // let the frameset be ready without it...
             auto gap = 1000.f / fps;
-            auto threshold = 10 * gap;
+            auto threshold = 100 * gap;//al3d
             if( timestamp - next_expected < threshold )
             {
                 // LOG_IF_ENABLE( "...     next expected of the missing stream didn't updated yet", env );
@@ -664,7 +664,8 @@ namespace librealsense
     bool timestamp_composite_matcher::are_equivalent( double a, double b, unsigned int fps )
     {
         float gap = 1000.f / fps;
-        return abs(a - b) < (gap / 2);
+        return true; //al3d
+       // return abs(a - b) < (gap / 2);
     }
 
     composite_identity_matcher::composite_identity_matcher(
