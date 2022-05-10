@@ -189,11 +189,19 @@ namespace rs2
         invoker invoke)
     {
         std::string serial = "";
+#if 0
         if (_dev.supports(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID))
             serial = _dev.get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
         else
             serial = _dev.query_sensors().front().get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
+#else  //al3d 
+        
+        if (_dev.supports(RS2_CAMERA_INFO_SERIAL_NUMBER))
+            serial = _dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+        else
+            serial = _dev.query_sensors().front().get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
 
+#endif
         // Clear FW update related notification to avoid dismissing the notification on ~device_model()
         // We want the notification alive during the whole process.
         _model.related_notifications.erase(
@@ -371,6 +379,8 @@ namespace rs2
 
 #endif
             log("Firmware Update completed, waiting for device to reconnect");
+
+            std::this_thread::sleep_for(std::chrono::seconds(5));  //al3d, wait 5 seconds for camera reboot flow.
         }
 
         if (!check_for([this, serial]() {
@@ -382,6 +392,8 @@ namespace rs2
                 {
                     auto d = devs[j];
 
+                   
+#if 0  
                     if (d.query_sensors().size() && d.query_sensors().front().supports(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID))
                     {
                         auto s = d.query_sensors().front().get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
@@ -391,6 +403,26 @@ namespace rs2
                             return true;
                         }
                     }
+#else //for al3d
+                    if (d.supports(RS2_CAMERA_INFO_SERIAL_NUMBER))
+                    {
+                        auto camera_sn = d.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+                        
+                        if (camera_sn == serial)
+                        {
+                            log("Discovered connection of the original device");
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        if (d.query_sensors().front().get_info(RS2_CAMERA_INFO_SERIAL_NUMBER) == serial)
+                        {
+                            log("Discovered connection of the original device");
+                            return true;
+                        }
+                    }
+#endif
                 }
                 catch (...) {}
             }
