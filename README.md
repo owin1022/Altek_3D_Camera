@@ -26,7 +26,7 @@ Open Visual Studio 2019 to load project with librealsense2.sln ,compile ,and exe
 
 
 ## Overview
-**Altek_3D_Camera SDK 1.0** is a cross-platform library for Altek® AQ360™ depth cameras.
+**Altek_3D_Camera SDK 1.0** is a cross-platform library for Altek AL6100 depth cameras.
 
 
 The SDK allows depth and color streaming, and provides intrinsic and extrinsic calibration information.
