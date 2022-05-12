@@ -70,6 +70,7 @@ namespace librealsense
                          };
                          if (strong) strong->raise_notification(postcondition_failed);
                          _silenced = true;
+						 LOG_ERROR("al3d: Error during err-polling, err value: " << (int)val); //al3d
                      }
                  }
              }
