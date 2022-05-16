@@ -6,6 +6,7 @@
 namespace librealsense
 {
     struct float3x3;
+    struct float3;
 }
 
 namespace rs2
@@ -26,6 +27,7 @@ namespace rs2
     private:
         void draw_float4x4(std::string name, librealsense::float3x3& feild, const librealsense::float3x3& original, bool& changed);
         void draw_float(std::string name, float& x, const float& orig, bool& changed);
+        void draw_float3(std::string name, librealsense::float3& feild, const librealsense::float3& orig, bool& changed);
 
         rs2::device dev;
         bool to_open = false;

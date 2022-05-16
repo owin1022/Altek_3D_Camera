@@ -7,6 +7,14 @@
 
 using namespace rs2;
 
+static void cal_resolution_intrinsics_al(const OpenCVK_824bytes* alcvbin, uint32_t width, uint32_t height, float4* out_params);
+static void format_al_intrinsic_to_table(const OpenCVK_824bytes* alcvbin,
+    librealsense::float3x3* al_intrinsic,
+    librealsense::float3x3* al_extrinsic_rot,
+    librealsense::float3* al_extrinsic_trans,
+    int is_main,
+    float trans_scale= -0.001f);
+
 bool calibration_model::supports()
 {
     bool is_d400 = dev.supports(RS2_CAMERA_INFO_PRODUCT_LINE) ?
@@ -32,6 +40,25 @@ void calibration_model::draw_float(std::string name, float& x, const float& orig
         changed = true;
     }
     ImGui::PopStyleColor();
+}
+
+void calibration_model::draw_float3(std::string name, librealsense::float3& feild, const librealsense::float3& orig, bool& changed)
+{
+    ImGui::SetCursorPosX(10);
+    ImGui::Text("%s:", name.c_str()); ImGui::SameLine();
+    ImGui::SetCursorPosX(200);
+
+    ImGui::PushItemWidth(120);
+    ImGui::SetCursorPosX(200);
+    draw_float(name + "_X", feild.x, orig.x, changed);
+    ImGui::SameLine();
+    draw_float(name + "_Y", feild.y, orig.y, changed);
+    ImGui::SameLine();
+    draw_float(name + "_Z", feild.z, orig.z, changed);
+
+    ImGui::PopItemWidth();
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 }
 
 void calibration_model::draw_float4x4(std::string name, librealsense::float3x3& feild, 
@@ -503,6 +530,16 @@ void calibration_model::update(ux_window& window, std::string& error_message)
     ImGui::PopStyleVar(2);
 }
 
+librealsense::float3& transfer_to_float3_al(double* src)
+{
+    librealsense::float3* dst = new librealsense::float3;
+    dst->x = (float)src[0];
+    dst->y = (float)src[1];
+    dst->z = (float)src[2];
+
+    return *dst;
+}
+
 librealsense::float3x3 &transfer_to_float3x3_al(double *src)
 {
     librealsense::float3x3 *dst = new librealsense::float3x3;
@@ -531,6 +568,7 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
             _original = _calibration;
             //auto s1 = _calibration.size();     // aston, real-sense data format is 512bytes.
             //auto s2 = _calibration.capacity(); // aston, real-sense data format is 512bytes.
+            selected_resolution = 1; // for altek, set default resolution index to 1 (1280x720)
             ImGui::OpenPopup(window_name);
         }
         catch (std::exception e)
@@ -624,12 +662,71 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
         {
             try
             {
-                if (auto fn = file_dialog_open(file_dialog_mode::save_file, "altek Calibration\0*.bin\0", nullptr, nullptr))
+                if (auto fn = file_dialog_open(file_dialog_mode::save_file, "altek Calibration\0*.json\0", nullptr, nullptr))
                 {
-                    //config_file cf(fn);
+                    config_file cf(fn);
+                    cf.set("baseline", table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_eBaseline);
+                    auto save_float3x4 = [&](std::string name, librealsense::float3x3& m) {
+                        cf.set(std::string(to_string() << name << ".x.x").c_str(), m.x.x);
+                        cf.set(std::string(to_string() << name << ".x.y").c_str(), m.x.y);
+                        cf.set(std::string(to_string() << name << ".x.z").c_str(), m.x.z);
+
+                        cf.set(std::string(to_string() << name << ".y.x").c_str(), m.y.x);
+                        cf.set(std::string(to_string() << name << ".y.y").c_str(), m.y.y);
+                        cf.set(std::string(to_string() << name << ".y.z").c_str(), m.y.z);
+
+                        cf.set(std::string(to_string() << name << ".z.x").c_str(), m.z.x);
+                        cf.set(std::string(to_string() << name << ".z.y").c_str(), m.z.y);
+                        cf.set(std::string(to_string() << name << ".z.z").c_str(), m.z.z);
+                    };
+                    auto save_float3 = [&](std::string name, librealsense::float3& m) {
+                        cf.set(std::string(to_string() << name << ".x").c_str(), m.x);
+                        cf.set(std::string(to_string() << name << ".y").c_str(), m.y);
+                        cf.set(std::string(to_string() << name << ".z").c_str(), m.z);
+                    };
+
+                    librealsense::float3x3 al_intrinsic_l;
+                    librealsense::float3x3 al_intrinsic_r;
+                    float trans_scale = -0.001f;
+                    librealsense::float3x3 al_extrinsic_rot_l;
+                    librealsense::float3 al_extrinsic_trans_l;
+                    librealsense::float3x3 al_extrinsic_rot_r;
+                    librealsense::float3 al_extrinsic_trans_r;
+                    format_al_intrinsic_to_table(&table->al_cvbin, &al_intrinsic_l, &al_extrinsic_rot_l, &al_extrinsic_trans_l, 1, trans_scale);
+                    format_al_intrinsic_to_table(&table->al_cvbin, &al_intrinsic_r, &al_extrinsic_rot_r, &al_extrinsic_trans_r, 0, trans_scale);
+
+                    save_float3x4("intrinsic_left", al_intrinsic_l);
+                    save_float3x4("intrinsic_right", al_intrinsic_r);
+                    save_float3x4("world2left_rot", al_extrinsic_rot_l);
+                    //save_float3("world2left_transation", al_extrinsic_trans_l);
+                    save_float3x4("world2right_rot", al_extrinsic_rot_r);
+                    //save_float3("world2right_transation", al_extrinsic_trans_r);
+
+                    float4 tbl_rect_params[librealsense::ds::max_ds5_rect_resolutions];
+                    for (int i = 0; i < librealsense::ds::max_ds5_rect_resolutions; i++)
+                    {
+                        auto xy = librealsense::ds::resolutions_list[(librealsense::ds::ds5_rect_resolutions)i];
+                        int w = xy.x; int h = xy.y;
+                        cal_resolution_intrinsics_al(&table->al_cvbin, w, h, &tbl_rect_params[i]);
+
+                        cf.set(std::string(to_string() << "rectified." << i << ".width").c_str(), w);
+                        cf.set(std::string(to_string() << "rectified." << i << ".height").c_str(), h);
+
+                        cf.set(std::string(to_string() << "rectified." << i << ".fx").c_str(), tbl_rect_params[i].x);
+                        cf.set(std::string(to_string() << "rectified." << i << ".fy").c_str(), tbl_rect_params[i].y);
+
+                        cf.set(std::string(to_string() << "rectified." << i << ".ppx").c_str(), tbl_rect_params[i].z);
+                        cf.set(std::string(to_string() << "rectified." << i << ".ppy").c_str(), tbl_rect_params[i].w);
+                    }
+
+                    // save altek calibration bin file
+                    char fn_tmp[_MAX_PATH] = {0};
+                    strcpy(fn_tmp, fn);
+                    char *fn_al = strtok(fn_tmp, ".");
+                    strcat(fn_al, ".bin");
                     FILE* fpo;
                     size_t ret_size = 0;
-                    fpo = fopen(fn, "wb");
+                    fpo = fopen(fn_al, "wb");
                     if (NULL == fpo)
                     {
                         fclose(fpo);
@@ -709,14 +806,21 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
         ImGui::PopItemWidth();
 
-        draw_float4x4("m_aeH_Main", transfer_to_float3x3_al(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main),
-                                    transfer_to_float3x3_al(orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Main), changed);
-        draw_float4x4("m_aeH_Sub", transfer_to_float3x3_al(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Sub),
-                                   transfer_to_float3x3_al(orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeH_Sub), changed);
-        draw_float4x4("m_aeR_Main", transfer_to_float3x3_al(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeR_Main),
-                                    transfer_to_float3x3_al(orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeR_Main), changed);
-        draw_float4x4("m_aeR_Sub", transfer_to_float3x3_al(table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeR_Sub),
-                                   transfer_to_float3x3_al(orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_aeR_Sub), changed);
+        librealsense::float3x3 al_intrinsic_l;
+        librealsense::float3x3 al_intrinsic_r;
+        float trans_scale = -0.001f;
+        librealsense::float3x3 al_extrinsic_rot_l;
+        librealsense::float3 al_extrinsic_trans_l;
+        librealsense::float3x3 al_extrinsic_rot_r;
+        librealsense::float3 al_extrinsic_trans_r;
+        format_al_intrinsic_to_table(&table->al_cvbin, &al_intrinsic_l, &al_extrinsic_rot_l, &al_extrinsic_trans_l, 1, trans_scale);
+        format_al_intrinsic_to_table(&table->al_cvbin, &al_intrinsic_r, &al_extrinsic_rot_r, &al_extrinsic_trans_r, 0, trans_scale);
+        draw_float4x4("Left Intrinsics", al_intrinsic_l, al_intrinsic_l, changed);
+        draw_float4x4("Right Intrinsics", al_intrinsic_r, al_intrinsic_r, changed);
+        draw_float4x4("World to Left Rotation", al_extrinsic_rot_l, al_extrinsic_rot_l, changed);
+        //draw_float3("World to Left transation", al_extrinsic_trans_l, al_extrinsic_trans_l, changed);
+        draw_float4x4("World to Right Rotation", al_extrinsic_rot_r, al_extrinsic_rot_r, changed);
+        //draw_float3("World to Right transation", al_extrinsic_trans_r, al_extrinsic_trans_r, changed);
         
         ImGui::SetCursorPosX(10);
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
@@ -727,6 +831,7 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
         std::vector<std::string> resolution_names;
         std::vector<const char*> resolution_names_char;
         std::vector<int> resolution_offset;
+        float4 tbl_rect_params[librealsense::ds::max_ds5_rect_resolutions];
         for (int i = 0; i < librealsense::ds::max_ds5_rect_resolutions; i++)
         {
             auto xy = librealsense::ds::resolutions_list[(librealsense::ds::ds5_rect_resolutions)i];
@@ -736,6 +841,16 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
                 std::string name = to_string() << w << " x " << h;
                 resolution_names.push_back(name);
             }
+            cal_resolution_intrinsics_al(&table->al_cvbin, w, h, &tbl_rect_params[i]);
+            static int g_save_to_csv = 0;
+            if (g_save_to_csv > 0)
+            {
+                FILE* fpt = nullptr;
+                fpt = fopen(R"(D:\Temp\test4\resolution_intrinsic.csv)", "a+");
+                fprintf(fpt, "%dx%d, %f, %f, %f, %f,\n", w, h, tbl_rect_params[i].x, tbl_rect_params[i].y, tbl_rect_params[i].z, tbl_rect_params[i].w);
+                fclose(fpt);
+                g_save_to_csv--;
+            }
         }
         for (size_t i = 0; i < resolution_offset.size(); i++)
         {
@@ -743,12 +858,7 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
         }
 
         ImGui::PushItemWidth(120);
-        //ImGui::Combo("##RectifiedResolutions", &selected_resolution, resolution_names_char.data(), int(resolution_names_char.size()));
-        auto tcwm = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Main;
-        auto tcwh = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Main;
-        draw_float("RectResX", tcwm, orig_table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Main, changed);
-        ImGui::SameLine();
-        draw_float("RectResY", tcwh, orig_table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Main, changed);
+        ImGui::Combo("##RectifiedResolutions", &selected_resolution, resolution_names_char.data(), int(resolution_names_char.size()));
 
         ImGui::SetCursorPosX(10);
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
@@ -756,21 +866,17 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
         ImGui::Text("Focal Length:"); ImGui::SameLine();
         ImGui::SetCursorPosX(200);
 
-        auto tefxr = (float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efx_rec;
-        auto tefyr = (float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efy_rec;
-        draw_float("FocalX", tefxr, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efx_rec, changed);
+        draw_float("FocalX", tbl_rect_params[selected_resolution].x, tbl_rect_params[selected_resolution].x, changed);
         ImGui::SameLine();
-        draw_float("FocalY", tefyr, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_efy_rec, changed);
+        draw_float("FocalY", tbl_rect_params[selected_resolution].y, tbl_rect_params[selected_resolution].y, changed);
 
         ImGui::SetCursorPosX(10);
         ImGui::Text("Principal Point:"); ImGui::SameLine();
         ImGui::SetCursorPosX(200);
 
-        auto tecxr = (float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecx_rec;
-        auto tecyr = (float)table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecy_rec;
-        draw_float("PPX", tecxr, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecx_rec, changed);
+        draw_float("PPX", tbl_rect_params[selected_resolution].z, tbl_rect_params[selected_resolution].z, changed);
         ImGui::SameLine();
-        draw_float("PPY", tecyr, orig_table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecy_rec, changed);
+        draw_float("PPY", tbl_rect_params[selected_resolution].w, tbl_rect_params[selected_resolution].w, changed);
 
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 
@@ -874,4 +980,60 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
     }
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar(2);
+}
+
+static void cal_resolution_intrinsics_al(const OpenCVK_824bytes* alcvbin, uint32_t width, uint32_t height, float4 *out_params)
+{
+    float altek_cali_table_width = (float)alcvbin->ucOpenCV_440.m_uwCalib_W_Main;
+    float altek_cali_table_height = (float)alcvbin->ucOpenCV_440.m_uwCalib_H_Main;
+    float altek_cali_height_offset = 80 / 2;  // (cali height- sensor output height)2   -->  (800-720)/2
+
+
+    float depth_ratio_fx = ((float)width) / altek_cali_table_width;
+    float depth_ratio_fy = ((float)height) / (altek_cali_table_height - altek_cali_height_offset * 2);
+    float depth_ratio_ppx = ((float)width) / altek_cali_table_width;
+    float depth_ratio_ppy = ((float)height) / (altek_cali_table_height - altek_cali_height_offset * 2);
+
+    out_params->x = ((float)alcvbin->ucOpenCV_rec_384.ucOpenCV_rec_328.m_efx_rec) * depth_ratio_fx; //intrinsics.fx
+    out_params->y = ((float)alcvbin->ucOpenCV_rec_384.ucOpenCV_rec_328.m_efy_rec) * depth_ratio_fy; //intrinsics.fy
+    out_params->z = ((float)alcvbin->ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecx_rec) * depth_ratio_ppx; //intrinsics.ppx
+    out_params->w = (((float)alcvbin->ucOpenCV_rec_384.ucOpenCV_rec_328.m_ecy_rec) * depth_ratio_ppy) - (altek_cali_height_offset * depth_ratio_ppy); //intrinsics.ppy
+
+    return;
+}
+
+static void format_al_intrinsic_to_table(const OpenCVK_824bytes* alcvbin,
+    librealsense::float3x3 *al_intrinsic,
+    librealsense::float3x3 *al_extrinsic_rot,
+    librealsense::float3 *al_extrinsic_trans,
+    int is_main,
+    float trans_scale)
+{
+    if (is_main)
+    {
+        *al_intrinsic = { (float)alcvbin->ucOpenCV_440.m_efx_Main, 0.0, (float)alcvbin->ucOpenCV_440.m_eux_Main,
+                         0.0, (float)alcvbin->ucOpenCV_440.m_efy_Main, (float)alcvbin->ucOpenCV_440.m_euy_Main,
+                         0.0, 0.0, 1.0 };
+
+        *al_extrinsic_rot = { (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[0], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[1], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[2],
+                              (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[3], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[4], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[5],
+                              (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[6], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[7], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Main[8] };
+        *al_extrinsic_trans = { (float)alcvbin->ucOpenCV_440.m_aeRelativeT_Main[0] * trans_scale,
+                                (float)alcvbin->ucOpenCV_440.m_aeRelativeT_Main[1] * trans_scale,
+                                (float)alcvbin->ucOpenCV_440.m_aeRelativeT_Main[2] * trans_scale };
+    }
+    else // sub
+    {
+        *al_intrinsic = { (float)alcvbin->ucOpenCV_440.m_efx_Sub, 0.0, (float)alcvbin->ucOpenCV_440.m_eux_Sub,
+                          0.0, (float)alcvbin->ucOpenCV_440.m_efy_Sub, (float)alcvbin->ucOpenCV_440.m_euy_Sub,
+                          0.0, 0.0, 1.0 };
+
+        *al_extrinsic_rot = { (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[0], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[1], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[2],
+                              (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[3], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[4], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[5],
+                              (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[6], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[7], (float)alcvbin->ucOpenCV_440.m_aeRelativeR_Sub[8] };
+        *al_extrinsic_trans = { (float)alcvbin->ucOpenCV_440.m_aeRelativeT_Sub[0] * trans_scale,
+                                (float)alcvbin->ucOpenCV_440.m_aeRelativeT_Sub[1] * trans_scale,
+                                (float)alcvbin->ucOpenCV_440.m_aeRelativeT_Sub[2] * trans_scale };
+    }
+    return ;
 }
