@@ -4,7 +4,7 @@
 #include "os.h"
 
 #include "../src/ds5/ds5-private.h"
-
+#define _MAX_PATH 256
 using namespace rs2;
 
 static void cal_resolution_intrinsics_al(const OpenCVK_824bytes* alcvbin, uint32_t width, uint32_t height, float4* out_params);
