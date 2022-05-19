@@ -720,7 +720,7 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
                     }
 
                     // save altek calibration bin file
-                    char fn_tmp[_MAX_PATH] = {0};
+                    char fn_tmp[255] = {0};
                     strcpy(fn_tmp, fn);
                     char *fn_al = strtok(fn_tmp, ".");
                     strcat(fn_al, ".bin");
