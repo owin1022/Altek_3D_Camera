@@ -404,7 +404,10 @@ namespace librealsense
                     {
                         break;
                     }
-  
+					if (result.p1[0] == 0x80 || result.p1[0] == 0x82)  //0x80 not support cmd  0x82 burn image error
+                    {
+                        throw std::runtime_error("update failed, please try again");
+                    }
 
                 }
                 float progress = (float)blocks_count / (float)blocks_count;
