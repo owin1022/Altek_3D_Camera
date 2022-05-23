@@ -665,7 +665,7 @@ namespace librealsense
     {
     	
        float gap = 1000.f / fps;
-       if (fps < 15) gap *= 3; //enlarge gap for ROS. 30 fps 1 gap for pc / 15 fps and below use 2 gap for nano. 
+       if (fps < 10) gap *= 2; //enlarge gap for ROS. 30 fps 1 gap for pc / 15 fps and below use 2 gap for nano. 
        return abs(a - b) < (gap);
         //return abs(a - b) < (gap / 2);
     }
