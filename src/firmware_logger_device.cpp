@@ -17,7 +17,12 @@ namespace librealsense
         _flash_logs_initialized(false),
         _parser(nullptr),
         _fw_logs_command(fw_logs_command),
-        _flash_logs_command(flash_logs_command) { }
+        _flash_logs_command(flash_logs_command) 
+    {
+        //al3d
+        _device_pid = group.uvc_devices.front().pid;
+
+    }
 
     bool firmware_logger_device::get_fw_log(fw_logs::fw_logs_binary_data& binary_data)
     {

@@ -22,9 +22,23 @@ namespace librealsense
     std::string hw_monitor::get_module_serial_string(const std::vector<uint8_t>& buff, size_t index, size_t length)
     {
         std::stringstream formattedBuffer;
-        for (auto i = 0; i < length; i++)
-            formattedBuffer << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(buff[index + i]);
 
+        if(length==32) //al3d
+        {
+            for (auto i = 0; i < length; i++) 
+            {
+                if(buff[index + i]!=0x00)
+                    formattedBuffer << static_cast<char>(buff[index + i]);
+            }
+            
+        }
+        else 
+        {
+            for (auto i = 0; i < length; i++)
+                formattedBuffer << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(buff[index + i]);
+
+        }
+        
         return formattedBuffer.str();
     }
 

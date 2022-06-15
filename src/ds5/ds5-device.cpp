@@ -968,8 +968,24 @@ namespace librealsense
         std::vector<uint8_t> gvd_buff(HW_MONITOR_BUFFER_SIZE);
         _hw_monitor->get_gvd(gvd_buff.size(), gvd_buff.data(), GVD);
 
-        auto optic_serial = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset);
-        auto asic_serial = _hw_monitor->get_module_serial_string(gvd_buff, module_asic_serial_offset);
+        std::string optic_serial_str;
+        std::string asic_serial_str;
+        if ((_pid == ds::AL3D_PID))   //al3d
+        {
+            optic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset, 32);;
+            asic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset,32);
+
+        }
+        else 
+        {
+            optic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset);
+            asic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_asic_serial_offset);
+
+        }
+        auto optic_serial = optic_serial_str;
+        auto asic_serial = asic_serial_str;
+
+
         auto fwv = _hw_monitor->get_firmware_version_string(gvd_buff, camera_fw_version_offset);
    
 #if 0 
