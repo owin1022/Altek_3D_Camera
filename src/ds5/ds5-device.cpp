@@ -994,7 +994,7 @@ namespace librealsense
 
 #else   //for al3d debug
         _fw_version = firmware_version(fwv);
-        auto fwv_debug = _hw_monitor->get_firmware_version_string(gvd_buff, module_asic_serial_offset);
+        auto fwv_debug = _hw_monitor->get_firmware_version_string(gvd_buff, al3d_fw_version_offset);
         _recommended_fw_version = firmware_version(fwv_debug); //for al3d debug
 #endif
         
