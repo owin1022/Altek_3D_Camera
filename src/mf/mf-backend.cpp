@@ -138,10 +138,10 @@ namespace librealsense
             if (devices.empty()) 
             {
             
-                std::this_thread::sleep_for(std::chrono::milliseconds(150));
+               
                 while (--max_retry_count > 0)
                 {
-
+					std::this_thread::sleep_for(std::chrono::milliseconds(150));
                     if (devices.empty())
                         wmf_hid_device::foreach_hid_device(action);
                     else
