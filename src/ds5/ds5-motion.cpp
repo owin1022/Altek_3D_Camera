@@ -237,7 +237,7 @@ namespace librealsense
         });
 
         if ((camera_fw_version >= firmware_version(custom_sensor_fw_ver)) &&
-                (!val_in_range(_pid, { ds::RS400_IMU_PID, ds::RS435I_PID, ds::RS430I_PID, ds::RS465_PID, ds::RS405_PID, ds::RS455_PID })))
+                (!val_in_range(_pid, { ds::RS400_IMU_PID, ds::RS435I_PID, ds::RS430I_PID, ds::RS465_PID, ds::RS405_PID, ds::RS455_PID, ds::AL3Di_PID })))  //al3d
         {
             hid_ep->register_option(RS2_OPTION_MOTION_MODULE_TEMPERATURE,
                                     std::make_shared<motion_module_temperature_option>(*raw_hid_ep));

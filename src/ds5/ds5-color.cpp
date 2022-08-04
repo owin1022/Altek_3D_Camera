@@ -47,7 +47,7 @@ namespace librealsense
         };
 
         //for al3d
-        if (_pid == ds::AL3D_PID )
+        if ((_pid == ds::AL3D_PID )||(_pid == ds::AL3Di_PID ))
             _color_extrinsic = std::make_shared<lazy<rs2_extrinsics>>([this]() { return from_pose(get_color_stream_extrinsic_al3d(*_color_calib_table_raw)); });
         else
             _color_extrinsic = std::make_shared<lazy<rs2_extrinsics>>([this]() { return from_pose(get_color_stream_extrinsic(*_color_calib_table_raw)); });
@@ -64,7 +64,7 @@ namespace librealsense
        
        #if 1
 	    auto color_devs_info_mi2 = filter_by_mi(group.uvc_devices, 2);  
-        if (_pid == ds::AL3D_PID && color_devs_info_mi2.size() == 1) 
+        if (((_pid == ds::AL3D_PID) || (_pid == ds::AL3Di_PID ))&& color_devs_info_mi2.size() == 1) 
 	   #else //for al3d
         if(0)
 	   #endif		
@@ -312,7 +312,7 @@ namespace librealsense
    
         auto str_pid = _owner->_pid;
 
-        if (str_pid == ds::AL3D_PID)
+        if ((str_pid == ds::AL3D_PID)||(str_pid == ds::AL3Di_PID))
         {
             return get_intrinsic_by_resolution_al3d(
                 *_owner->_color_calib_table_raw,

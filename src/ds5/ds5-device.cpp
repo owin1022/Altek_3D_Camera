@@ -508,7 +508,7 @@ namespace librealsense
             }
             else 
             {
-                if (_owner->_pid == ds::AL3D_PID)
+                if ((_owner->_pid == ds::AL3D_PID)||(_owner->_pid == ds::AL3Di_PID))
                     return get_intrinsic_by_resolution_al3d(
                         *_owner->_coefficients_table_raw,
                         ds::calibration_table_id::coefficients_table_id,
@@ -773,7 +773,7 @@ namespace librealsense
     {
         using namespace ds;
 
-        if ((_pid == ds::AL3D_PID))   //al3d
+        if ((_pid == ds::AL3D_PID)||(_pid == ds::AL3Di_PID))   //al3d
         {
             auto table = check_calib<coefficients_table_al>(*_coefficients_table_raw);
             auto al_baseline = table->al_cvbin.ucOpenCV_rec_384.ucOpenCV_rec_328.m_eBaseline;
@@ -796,7 +796,7 @@ namespace librealsense
     std::vector<uint8_t> ds5_device::get_new_calibration_table() const
     {
      
-        if ((_fw_version >= firmware_version("5.11.9.5"))&& (_pid != ds::AL3D_PID)) //for al3d
+        if ((_fw_version >= firmware_version("5.11.9.5"))&& ((_pid != ds::AL3D_PID)&&(_pid != ds::AL3Di_PID))) //for al3d
         {
             command cmd(ds::RECPARAMSGET);
             return _hw_monitor->send(cmd);
@@ -934,7 +934,7 @@ namespace librealsense
         // Reference CS - Right-handed; positive [X,Y,Z] point to [Left,Up,Forward] accordingly.
         _left_right_extrinsics = std::make_shared<lazy<rs2_extrinsics>>([this]()
             {
-                if ((_pid == ds::AL3D_PID))   //al3d
+                if ((_pid == ds::AL3D_PID)||(_pid == ds::AL3Di_PID))   //al3d
                 {
                     rs2_extrinsics ext = identity_matrix();
                     auto table = check_calib<coefficients_table_al>(*_coefficients_table_raw);
@@ -970,7 +970,7 @@ namespace librealsense
 
         std::string optic_serial_str;
         std::string asic_serial_str;
-        if ((_pid == ds::AL3D_PID))   //al3d
+        if ((_pid == ds::AL3D_PID)||(_pid == ds::AL3Di_PID))   //al3d
         {
             optic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset, 32);;
             asic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset,32);
@@ -1388,7 +1388,7 @@ namespace librealsense
         register_info(RS2_CAMERA_INFO_SERIAL_NUMBER, optic_serial);
         register_info(RS2_CAMERA_INFO_ASIC_SERIAL_NUMBER, asic_serial);
 
-        if (_pid == AL3D_PID) //if (_pid == RBEYE_PID)  //al3d fw update
+        if ((_pid == AL3D_PID)||(_pid == AL3Di_PID)) //if (_pid == RBEYE_PID)  //al3d fw update
         {
             register_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID, optic_serial);
         }

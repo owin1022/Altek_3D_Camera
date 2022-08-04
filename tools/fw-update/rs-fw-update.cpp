@@ -298,7 +298,7 @@ int main(int argc, char** argv) try
 
         //for al3d
         std::string device_pid = d.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
-        if (device_pid == "99AA")
+        if ((device_pid == "99AA")||(device_pid == "99BB"))
         {
             al3d_device = true;
         }

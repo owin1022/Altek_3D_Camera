@@ -132,6 +132,29 @@ namespace librealsense
 
             wmf_hid_device::foreach_hid_device(action);
 
+            
+#if 1  //for al3d
+			int max_retry_count = 30;
+            if (devices.empty()) 
+            {
+            
+                std::this_thread::sleep_for(std::chrono::milliseconds(150));
+                while (--max_retry_count > 0)
+                {
+
+                    if (devices.empty())
+                        wmf_hid_device::foreach_hid_device(action);
+                    else
+                        break;
+                }
+               
+            }
+
+            if (max_retry_count <= 0) 
+            {
+                return devices;
+            }
+#endif
             return devices;
         }
 

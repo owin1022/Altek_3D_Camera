@@ -465,6 +465,7 @@ namespace librealsense
                     case RS430_PID:
                     case RS420_PID:
                     case AL3D_PID: //for al3d
+                    case AL3Di_PID: //for al3di
                     case RS400_IMU_PID:
 #if 1 //for al3d
                         found = (result.mi == 3);

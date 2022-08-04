@@ -625,7 +625,7 @@ namespace librealsense
         for (auto&& info : devices)
         {
             #if 1 //for al3d
-			if(info.pid == ds::AL3D_PID)
+			if((info.pid == ds::AL3D_PID)||(info.pid == ds::AL3Di_PID))
 			{
 #if 0
                 //mi = 2;
@@ -659,7 +659,7 @@ namespace librealsense
         for (auto&& info : devices)
         {
 			#if 1 // for al3d
-			if(info.pid == ds::AL3D_PID)
+			if((info.pid == ds::AL3D_PID)||(info.pid == ds::AL3Di_PID))
 			{
 #if 0  
 				//mi = 2;
