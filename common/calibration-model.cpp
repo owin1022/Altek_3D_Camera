@@ -21,7 +21,7 @@ bool calibration_model::supports()
         std::string(dev.get_info(RS2_CAMERA_INFO_PRODUCT_LINE)) == "D400" : false;
 
     std::string pidstr(dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID));
-    bool is_al_roboteye = pidstr.compare("99AA") == 0 ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
+    bool is_al_roboteye = (pidstr.compare("99AA") == 0 || pidstr.compare("99BB") == 0) ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
 
     return dev.is<rs2::auto_calibrated_device>() && (is_d400 || is_al_roboteye);
 }
@@ -159,7 +159,7 @@ void calibration_model::update(ux_window& window, std::string& error_message)
 {
     const auto window_name = "Calibration Window";
     std::string pidstr(dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID));
-    bool is_al_roboteye = pidstr.compare("99AA") == 0 ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
+    bool is_al_roboteye = (pidstr.compare("99AA") == 0 || pidstr.compare("99BB") == 0) ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
     if (is_al_roboteye)
     {
         update_al(window, error_message);

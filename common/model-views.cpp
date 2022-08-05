@@ -5269,8 +5269,8 @@ namespace rs2
         bool is_d400 = s->supports(RS2_CAMERA_INFO_PRODUCT_LINE) ?
             std::string(s->get_info(RS2_CAMERA_INFO_PRODUCT_LINE)) == "D400" : false;
 
-        std::string pidstr(dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID));
-        bool is_al_roboteye = pidstr.compare("99AA") == 0 ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
+        std::string pidstr = dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
+        bool is_al_roboteye = ((pidstr == "99AA") || (pidstr == "99BB")) ? true : false;// (dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID) == "99AA") ? true : false;
 
         std::string fw_version = s->supports(RS2_CAMERA_INFO_FIRMWARE_VERSION) ?
             s->get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION) : "";
