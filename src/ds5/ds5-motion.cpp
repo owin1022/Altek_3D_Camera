@@ -186,12 +186,22 @@ namespace librealsense
         // Dynamically populate the supported HID profiles according to the selected IMU module
         std::vector<odr> accel_fps_rates;
         std::map<unsigned, unsigned> fps_and_frequency_map;
-        if (ds::d400_caps::CAP_BMI_085 && _device_capabilities)
-            accel_fps_rates = { odr::IMU_FPS_100,odr::IMU_FPS_200 };
-        else // Applies to BMI_055 and unrecognized sensors
-            accel_fps_rates = { odr::IMU_FPS_63,odr::IMU_FPS_250 };
 
-        for (auto&& elem : accel_fps_rates)
+		if(_pid == ds::AL3Di_PID)
+		{
+			sensor_name_and_hid_profiles.erase(sensor_name_and_hid_profiles.begin());
+	        accel_fps_rates = { odr::IMU_FPS_400 };
+		}
+		else
+		{
+	        if (ds::d400_caps::CAP_BMI_085 && _device_capabilities)
+	            accel_fps_rates = { odr::IMU_FPS_100,odr::IMU_FPS_200 };
+	        else // Applies to BMI_055 and unrecognized sensors
+	            accel_fps_rates = { odr::IMU_FPS_63,odr::IMU_FPS_250 };
+
+		}
+		
+		for (auto&& elem : accel_fps_rates)
         {
             sensor_name_and_hid_profiles.push_back({ accel_sensor_name, { RS2_FORMAT_MOTION_XYZ32F, RS2_STREAM_ACCEL, 0, 1, 1, static_cast<uint16_t>(elem)} });
             fps_and_frequency_map.emplace(unsigned(elem), hid_fps_translation.at(elem));
@@ -223,7 +233,7 @@ namespace librealsense
             }
         }
         catch (...) {}
-
+	
         hid_ep->register_processing_block(
             { {RS2_FORMAT_MOTION_XYZ32F, RS2_STREAM_ACCEL} },
             { {RS2_FORMAT_MOTION_XYZ32F, RS2_STREAM_ACCEL} },
@@ -237,7 +247,7 @@ namespace librealsense
         });
 
         if ((camera_fw_version >= firmware_version(custom_sensor_fw_ver)) &&
-                (!val_in_range(_pid, { ds::RS400_IMU_PID, ds::RS435I_PID, ds::RS430I_PID, ds::RS465_PID, ds::RS405_PID, ds::RS455_PID, ds::AL3Di_PID })))  //al3d
+                (!val_in_range(_pid, { ds::RS400_IMU_PID, ds::RS435I_PID, ds::RS430I_PID, ds::RS465_PID, ds::RS405_PID, ds::RS455_PID })))
         {
             hid_ep->register_option(RS2_OPTION_MOTION_MODULE_TEMPERATURE,
                                     std::make_shared<motion_module_temperature_option>(*raw_hid_ep));
@@ -330,7 +340,7 @@ namespace librealsense
         }
 
         initialize_fisheye_sensor(ctx,group);
-
+		
         // Make sure all MM streams are positioned with the same extrinsics
         environment::get_instance().get_extrinsics_graph().register_extrinsics(*_depth_stream, *_accel_stream, _depth_to_imu);
         environment::get_instance().get_extrinsics_graph().register_same_extrinsics(*_accel_stream, *_gyro_stream);
