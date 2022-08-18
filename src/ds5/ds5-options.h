@@ -422,6 +422,19 @@ namespace librealsense
         uvc_sensor& _ep;
    
     };
+    //al3d_device_xu_option
+    class al3d_device_xu_option
+    {
+    public:
+        al3d_device_xu_option(uvc_sensor& ep);
+        ~al3d_device_xu_option() = default;
+       
+        bool set_PTS_Time(uint32_t host_second, uint32_t host_nanosecond);
+        bool get_PTS_Time(uint32_t *camera_second, uint32_t *camera_nanosecond);
+    private:
+        uvc_sensor& _ep;
+
+    };
    
 
 }

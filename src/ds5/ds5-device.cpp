@@ -42,6 +42,9 @@
 #include "fw-update/fw-update-unsigned.h"
 #include "../third-party/json.hpp"
 
+#include <chrono>
+
+
 #ifdef HWM_OVER_XU
 constexpr bool hw_mon_over_xu = true;
 #else
@@ -996,6 +999,7 @@ namespace librealsense
         _fw_version = firmware_version(fwv);
         auto fwv_debug = _hw_monitor->get_firmware_version_string(gvd_buff, al3d_fw_version_offset);
         _recommended_fw_version = firmware_version(fwv_debug); //for al3d debug
+        _al3d_fw_version = firmware_version(fwv_debug); //for al3d fw version
 #endif
         
         if (_fw_version >= firmware_version("5.10.4.0"))
@@ -1403,9 +1407,9 @@ namespace librealsense
         register_info(RS2_CAMERA_INFO_ADVANCED_MODE, ((advanced_mode) ? "YES" : "NO"));
         register_info(RS2_CAMERA_INFO_PRODUCT_ID, pid_hex_str);
 
-        //if (_pid == AL3D_PID) //if (_pid == RBEYE_PID)
+        //if ((_pid == AL3D_PID) ||(_pid == AL3Di_PID) )
         //{
-        //    register_info(RS2_CAMERA_INFO_PRODUCT_LINE, "alRobotEye");
+        //    register_info(RS2_CAMERA_INFO_PRODUCT_LINE, "AL3D");
         //}
         //else
         {
@@ -1418,6 +1422,37 @@ namespace librealsense
             register_info(RS2_CAMERA_INFO_USB_TYPE_DESCRIPTOR, usb_type_str);
 
         std::string curr_version= _fw_version;
+
+       if (
+           ((_pid == AL3D_PID)  && (_al3d_fw_version >= firmware_version("0.0.1.147"))) || 
+           ((_pid == AL3Di_PID) && (_al3d_fw_version >= firmware_version("0.0.1.192")))
+          ) //al3d sync pts time
+       {
+            
+            auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
+
+            //set current host time to al3d camera
+            auto now_epoch_set = std::chrono::system_clock::now().time_since_epoch();
+            auto seconds_set = std::chrono::duration_cast<std::chrono::seconds>(now_epoch_set);
+            auto nanosecond_set = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_set- seconds_set);
+            al3d_device_xu_cmd->set_PTS_Time((uint32_t)seconds_set.count(), (uint32_t)nanosecond_set.count());
+        
+            //get current al3d camera pts time
+            uint32_t camera_pts_second = 0;
+            uint32_t camera_pts_nanosecond = 0;
+            //host record current time epoch.
+            auto now_epoch_get = std::chrono::system_clock::now().time_since_epoch();
+            al3d_device_xu_cmd->get_PTS_Time(&camera_pts_second, &camera_pts_nanosecond);
+            
+            //time diff 
+            auto diff_start_time = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_get);
+            auto diff_end_time = std::chrono::seconds(camera_pts_second) + std::chrono::nanoseconds(camera_pts_nanosecond);
+            auto time_diff = std::chrono::duration_cast<std::chrono::microseconds>(diff_start_time - diff_end_time);
+            LOG_INFO("Time Diff (microseconds): " << std::to_string(abs(time_diff.count())));
+            
+       }
+       
+      
 
     }
 
