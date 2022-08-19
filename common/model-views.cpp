@@ -2342,9 +2342,14 @@ namespace rs2
         profile = f.get_profile();
         frame_number = f.get_frame_number();
         timestamp_domain = f.get_frame_timestamp_domain();
+		#if 0
         timestamp = f.get_timestamp();
         fps.add_timestamp(f.get_timestamp(), f.get_frame_number());
-
+		#else //for al3d  hardware fps
+        rs2_metadata_type sensor_timestamp_pts = f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_TIMESTAMP);
+        timestamp = sensor_timestamp_pts;
+        fps.add_timestamp(f.get_timestamp(), f.get_frame_number());
+		#endif
         view_fps.add_timestamp(glfwGetTime() * 1000, count++);
 
         // populate frame metadata attributes
