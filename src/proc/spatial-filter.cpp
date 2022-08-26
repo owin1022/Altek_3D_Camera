@@ -28,12 +28,12 @@ namespace librealsense
 	//Density Check Threshold: value[0-1], means 0%~100%
 	const float alpha_min_val = 0.00f;
 	const float alpha_max_val = 1.00f;
-	const float alpha_default_val = 0.40f;
+	const float alpha_default_val = 0.50f;
 	const float alpha_step = 0.01f;
 	// Mean Difference Check Threshold: value[0-max value], disparity level
 	const float delta_min_val = 0.0f;
 	const float delta_max_val = _ALTEK_SF_DELTA_MAX_*1.0f;
-	const float delta_default_val = 0.35f;
+	const float delta_default_val = 0.25f;
 	const float delta_step = 0.01f;
 	//Density Check iterations: value[0-5], run 0-5 times
 	const uint8_t filter_iter_min = 0;
@@ -44,7 +44,7 @@ namespace librealsense
 	const uint8_t holes_fill_min = 0;
 	const uint8_t holes_fill_max = 4;
 	const uint8_t holes_fill_step = 1;
-	const uint8_t holes_fill_def = 1;
+	const uint8_t holes_fill_def = 2;
 #else
 	// The weight of the current pixel for smoothing is bounded within [25..100]%
 	const float alpha_min_val = 0.25f;

@@ -25,7 +25,11 @@ namespace librealsense
 
         if(length==32) //al3d
         {
-            for (auto i = 0; i < length; i++) 
+#if 0
+            for (auto i = 0; i < length; i++)  
+#else
+            for (auto i = 0; i < 11; i++) //al3d sn 11 bytes
+#endif
             {
                 if(buff[index + i]!=0x00)
                     formattedBuffer << static_cast<char>(buff[index + i]);
