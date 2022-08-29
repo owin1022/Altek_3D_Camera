@@ -64,7 +64,7 @@ namespace librealsense
         const uint8_t DS5_LED_PWR                         = 0xE;
         const uint8_t DS5_THERMAL_COMPENSATION            = 0xF;
         const uint8_t AL3D_Sync_PTS_Time                  = 0x10;
-
+        const uint8_t AL3D_PTS_Time_Diff                  = 0x11;
 
         // Devices supported by the current version
         static const std::set<std::uint16_t> rs400_sku_pid = {

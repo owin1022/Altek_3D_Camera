@@ -1429,27 +1429,61 @@ namespace librealsense
           ) //al3d sync pts time
        {
             
-            auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
+           auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
+   
+           {
+               //set current host time to al3d camera
+               auto now_epoch_set = std::chrono::system_clock::now().time_since_epoch();
+               auto seconds_set = std::chrono::duration_cast<std::chrono::seconds>(now_epoch_set);
+               auto nanosecond_set = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_set - seconds_set);
+               al3d_device_xu_cmd->set_PTS_Time((uint32_t)seconds_set.count(), (uint32_t)nanosecond_set.count());
+#if 0  //example to get camera pts time
+               //get diff time between al3d camera and host pc
+               uint32_t camera_pts_second = 0;
+               uint32_t camera_pts_nanosecond = 0;
+               //host record current time epoch.
+               auto now_epoch_host = std::chrono::system_clock::now().time_since_epoch();
+               al3d_device_xu_cmd->get_PTS_Time(&camera_pts_second, &camera_pts_nanosecond);
 
-            //set current host time to al3d camera
-            auto now_epoch_set = std::chrono::system_clock::now().time_since_epoch();
-            auto seconds_set = std::chrono::duration_cast<std::chrono::seconds>(now_epoch_set);
-            auto nanosecond_set = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_set- seconds_set);
-            al3d_device_xu_cmd->set_PTS_Time((uint32_t)seconds_set.count(), (uint32_t)nanosecond_set.count());
-        
-            //get current al3d camera pts time
-            uint32_t camera_pts_second = 0;
-            uint32_t camera_pts_nanosecond = 0;
-            //host record current time epoch.
-            auto now_epoch_get = std::chrono::system_clock::now().time_since_epoch();
-            al3d_device_xu_cmd->get_PTS_Time(&camera_pts_second, &camera_pts_nanosecond);
-            
-            //time diff 
-            auto diff_start_time = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_get);
-            auto diff_end_time = std::chrono::seconds(camera_pts_second) + std::chrono::nanoseconds(camera_pts_nanosecond);
-            auto time_diff = std::chrono::duration_cast<std::chrono::microseconds>(diff_start_time - diff_end_time);
-            LOG_INFO("Time Diff (microseconds): " << std::to_string(abs(time_diff.count())));
-            
+
+               //time diff 
+               auto get_start_time = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_host);
+               auto get_end_time = std::chrono::seconds(camera_pts_second) + std::chrono::nanoseconds(camera_pts_nanosecond);
+               auto get_time_diff = std::chrono::duration_cast<std::chrono::microseconds>(get_start_time - get_end_time);
+               //LOG_INFO("Get cTime Diff (microseconds): " << std::to_string(abs(get_time_diff.count())));
+#endif            
+
+           }
+       }
+       if (
+           ((_pid == AL3D_PID) && (_al3d_fw_version >= firmware_version("0.0.1.151"))) ||
+           ((_pid == AL3Di_PID) && (_al3d_fw_version >= firmware_version("0.0.1.206")))
+           ) //al3d sync pts time
+       {
+
+           auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
+           for (int i = 0; i < 30; i++)
+           {
+               //set current host time to al3d camera
+               auto now_epoch_set = std::chrono::system_clock::now().time_since_epoch();
+               auto seconds_set = std::chrono::duration_cast<std::chrono::seconds>(now_epoch_set);
+               auto nanosecond_set = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_set - seconds_set);
+               al3d_device_xu_cmd->set_PTS_Time((uint32_t)seconds_set.count(), (uint32_t)nanosecond_set.count());         
+
+               uint32_t diff_pts_second = 0;
+               uint32_t diff_pts_nanosecond = 0;
+               now_epoch_set = std::chrono::system_clock::now().time_since_epoch();
+               seconds_set = std::chrono::duration_cast<std::chrono::seconds>(now_epoch_set);
+               nanosecond_set = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_set - seconds_set);
+               al3d_device_xu_cmd->check_PTS_Time_Diff((uint32_t)seconds_set.count(), (uint32_t)nanosecond_set.count(), &diff_pts_second, &diff_pts_nanosecond);
+               auto diff_time = std::chrono::seconds(diff_pts_second) + std::chrono::microseconds(diff_pts_nanosecond);
+
+               if (diff_time.count() < 800 || i == 29)  //800us
+               {
+                   LOG_INFO(std::to_string(i) << " Time Diff (microseconds): " << std::to_string(diff_time.count()));
+                   break;
+               }                  
+           }
        }
        
       

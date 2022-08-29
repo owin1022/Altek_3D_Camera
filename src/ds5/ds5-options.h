@@ -431,6 +431,8 @@ namespace librealsense
        
         bool set_PTS_Time(uint32_t host_second, uint32_t host_nanosecond);
         bool get_PTS_Time(uint32_t *camera_second, uint32_t *camera_nanosecond);
+        bool check_PTS_Time_Diff(uint32_t host_second, uint32_t host_nanosecond, uint32_t* diff_second, uint32_t* diff_nanosecond);
+       
     private:
         uvc_sensor& _ep;
 
