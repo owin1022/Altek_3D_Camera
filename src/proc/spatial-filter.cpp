@@ -139,10 +139,10 @@ namespace librealsense
 			filter_iter_def,
 			&_spatial_iterations, "Density Check iterations");
 
-		register_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, spatial_filter_alpha);
-		register_option(RS2_OPTION_FILTER_SMOOTH_DELTA, spatial_filter_delta);
-		register_option(RS2_OPTION_FILTER_MAGNITUDE, spatial_filter_iterations);
-		register_option(RS2_OPTION_HOLES_FILL, holes_filling_mode);
+		//register_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, spatial_filter_alpha);
+		//register_option(RS2_OPTION_FILTER_SMOOTH_DELTA, spatial_filter_delta);
+		//register_option(RS2_OPTION_FILTER_MAGNITUDE, spatial_filter_iterations);
+		//register_option(RS2_OPTION_HOLES_FILL, holes_filling_mode);
 
 #else
 	spatial_filter::spatial_filter() :

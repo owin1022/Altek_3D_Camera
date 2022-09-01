@@ -485,10 +485,11 @@ namespace librealsense
             CASE(INZI)
             CASE(INVI)
             CASE(W10)
+			CASE(AL24) 
+			CASE(Z32)   
             CASE(Z16H)
             CASE(FG)
             CASE(Y411)
-            CASE(Z32) // Ken++  Z32
         default: assert(!is_valid(value)); return UNKNOWN_VALUE;
         }
 #undef CASE

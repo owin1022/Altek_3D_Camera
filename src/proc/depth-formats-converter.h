@@ -42,6 +42,22 @@ namespace librealsense
         w10_converter(const char* name, const rs2_format& target_format);
         void process_function(byte * const dest[], const byte * source, int width, int height, int actual_size, int input_size) override;
     };
+
+	// al_converter
+    class al24_converter : public interleaved_functional_processing_block
+    {
+    public:
+		al24_converter(int depth_idx = 0, int left_idx = 1) :
+			al24_converter("AL24 Converter", depth_idx, left_idx) {}
+
+    protected:
+		al24_converter(const char * name, int depth_idx, int left_idx)
+			: interleaved_functional_processing_block(name, RS2_FORMAT_AL24, 	RS2_FORMAT_Z16, RS2_STREAM_DEPTH, RS2_EXTENSION_DEPTH_FRAME, 0,
+																				RS2_FORMAT_Y8, RS2_STREAM_INFRARED, RS2_EXTENSION_VIDEO_FRAME, 1) {}
+
+        void process_function(byte * const dest[], const byte * source, int width, int height, int actual_size, int input_size) override;
+    };
+
 	// Ken++  Z32
     class al_converter : public interleaved_functional_processing_block
     {

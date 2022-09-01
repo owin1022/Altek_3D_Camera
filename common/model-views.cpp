@@ -1593,12 +1593,7 @@ namespace rs2
                     if (streaming)
                     {
                         label = to_string() << stream_display_names[f.first] << (show_single_fps_list ? "" : " stream:");
-
-					   if (f.first == 1)// Ken ++ demo
-					   {                            
-					   		label = to_string() << "Infrared " << f.first;
-					   }
-											   
+			   
                         ImGui::Text("%s", label.c_str());
                         streaming_tooltip();
                     }
@@ -1606,12 +1601,7 @@ namespace rs2
                     {
                         auto tmp = stream_enabled;
                         label = to_string() << stream_display_names[f.first] << "##" << f.first;
-
-                       if (f.first == 1) // Ken ++ demo
-					   {                            
-					   		label = to_string() << "Infrared " << f.first;
-					   }
-											   
+			   
                         if (ImGui::Checkbox(label.c_str(), &stream_enabled[f.first]))
                         {
                             prev_stream_enabled = tmp;
@@ -2713,22 +2703,12 @@ namespace rs2
             std::string sensor_name = dev->s->get_info(RS2_CAMERA_INFO_NAME);
             std::string stream_name = rs2_stream_to_string(profile.stream_type());
 
-			#if 1  // Ken ++ demo
-			auto dev_index =  profile.stream_index();
-
-			
-			if(dev_index == 1)
+			if(RS2_STREAM_INFRARED == profile.stream_type())
 			{
-				stream_name = rs2_stream_to_string(RS2_STREAM_COLOR);
-			}
-			else
-			{
-				stream_name = rs2_stream_to_string(profile.stream_type());
+				auto dev_index =  profile.stream_index();
+				stream_name =  to_string() << stream_name << " " << dev_index;	
 			}
 
-			#else
-			std::string stream_name = rs2_stream_to_string(profile.stream_type());
-			#endif
 			
             tooltip = to_string() << dev_name << " s.n:" << dev_serial << " | " << sensor_name << ", " << stream_name << " stream";
             const auto approx_char_width = 12;
