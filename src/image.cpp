@@ -52,7 +52,7 @@ namespace librealsense
         case RS2_FORMAT_FG: return 16;
         case RS2_FORMAT_Y411: return 12;
 		case RS2_FORMAT_AL24: return 24; 
-		case RS2_FORMAT_Z32: return  32; // Ken++  Z32
+		case RS2_FORMAT_AL32: return  32; 
         default: assert(false); return 0;
         }
     }

@@ -64,7 +64,7 @@ namespace librealsense
         {rs_fourcc('Y','1','2','I'), RS2_FORMAT_Y12I},
         {rs_fourcc('Z','1','6',' '), RS2_FORMAT_Z16},
         {rs_fourcc('A','L','2','4'), RS2_FORMAT_AL24},
-        {rs_fourcc('Z','3','2',' '), RS2_FORMAT_Z32},
+        {rs_fourcc('A','L','3','2'), RS2_FORMAT_AL32},
         {rs_fourcc('Z','1','6','H'), RS2_FORMAT_Z16H},
         {rs_fourcc('R','G','B','2'), RS2_FORMAT_BGR8},
         {rs_fourcc('M','J','P','G'), RS2_FORMAT_MJPEG},
@@ -83,7 +83,7 @@ namespace librealsense
         {rs_fourcc('R','G','B','2'), RS2_STREAM_INFRARED},
         {rs_fourcc('Z','1','6',' '), RS2_STREAM_DEPTH},
 		{rs_fourcc('A','L','2','4'), RS2_STREAM_DEPTH},
-		{rs_fourcc('Z','3','2',' '), RS2_STREAM_DEPTH},        
+		{rs_fourcc('A','L','3','2'), RS2_STREAM_DEPTH},        
         {rs_fourcc('Z','1','6','H'), RS2_STREAM_DEPTH},
         {rs_fourcc('B','Y','R','2'), RS2_STREAM_COLOR},
         {rs_fourcc('M','J','P','G'), RS2_STREAM_COLOR}
@@ -879,18 +879,6 @@ namespace librealsense
         depth_ep->register_processing_block(processing_block_factory::create_id_pbf(RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1));
         depth_ep->register_processing_block(processing_block_factory::create_id_pbf(RS2_FORMAT_Z16, RS2_STREAM_DEPTH));
 
-
-		depth_ep->register_processing_block(
-			{ { RS2_FORMAT_AL24 } },
-			{ { RS2_FORMAT_Z16, RS2_STREAM_DEPTH, 0 },{ RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1 } },
-			[]() {return std::make_shared<al24_converter>(); });
-#if 1  // Ken++  Z32
-		depth_ep->register_processing_block(
-			{ { RS2_FORMAT_Z32 } },
-			{ { RS2_FORMAT_Z16, RS2_STREAM_DEPTH, 0 },{ RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1 }, {RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 2} },
-			[]() {return std::make_shared<al_converter>(); });
-#endif 
-
         depth_ep->register_processing_block({ {RS2_FORMAT_W10} }, { {RS2_FORMAT_RAW10, RS2_STREAM_INFRARED, 1} }, []() { return std::make_shared<w10_converter>(RS2_FORMAT_RAW10); });
         depth_ep->register_processing_block({ {RS2_FORMAT_W10} }, { {RS2_FORMAT_Y10BPACK, RS2_STREAM_INFRARED, 1} }, []() { return std::make_shared<w10_converter>(RS2_FORMAT_Y10BPACK); });
 
@@ -1048,6 +1036,20 @@ namespace librealsense
             { {RS2_FORMAT_Y16, RS2_STREAM_INFRARED, 1}, {RS2_FORMAT_Y16, RS2_STREAM_INFRARED, 2} },
             []() {return std::make_shared<y12i_to_y16y16>(); }
         );
+		
+		if (_pid == ds::AL3Di_PID)//al3di
+		{
+			depth_sensor.register_processing_block(
+				{ { RS2_FORMAT_AL24 } },
+				{ { RS2_FORMAT_Z16, RS2_STREAM_DEPTH, 0 },{ RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1 } },
+				[]() {return std::make_shared<al24_converter>(); });
+
+
+			depth_sensor.register_processing_block(
+				{ { RS2_FORMAT_AL32 } },
+				{ { RS2_FORMAT_Z16, RS2_STREAM_DEPTH, 0 },{ RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1 }, {RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 2} },
+				[]() {return std::make_shared<al32_converter>(); });
+		}
 
         auto pid_hex_str = hexify(_pid);
 

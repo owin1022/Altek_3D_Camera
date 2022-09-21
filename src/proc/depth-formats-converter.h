@@ -58,16 +58,16 @@ namespace librealsense
         void process_function(byte * const dest[], const byte * source, int width, int height, int actual_size, int input_size) override;
     };
 
-	// Ken++  Z32
-    class al_converter : public interleaved_functional_processing_block
+
+    class al32_converter : public interleaved_functional_processing_block
     {
     public:
-		al_converter(int depth_idx = 0, int left_idx = 1, int right_idx = 2 ) :
-			al_converter("AL Converter", depth_idx, left_idx, right_idx) {}
+		al32_converter(int depth_idx = 0, int left_idx = 1, int right_idx = 2 ) :
+			al32_converter("AL32 Converter", depth_idx, left_idx, right_idx) {}
 
     protected:
-		al_converter(const char * name, int depth_idx, int left_idx, int right_idx)
-			: interleaved_functional_processing_block(name, RS2_FORMAT_Z32, 	RS2_FORMAT_Z16, RS2_STREAM_DEPTH, RS2_EXTENSION_VIDEO_FRAME, 0,
+		al32_converter(const char * name, int depth_idx, int left_idx, int right_idx)
+			: interleaved_functional_processing_block(name, RS2_FORMAT_AL32, 	RS2_FORMAT_Z16, RS2_STREAM_DEPTH, RS2_EXTENSION_DEPTH_FRAME, 0,
 																				RS2_FORMAT_Y8, RS2_STREAM_INFRARED, RS2_EXTENSION_VIDEO_FRAME, 1,
 																				RS2_FORMAT_Y8, RS2_STREAM_INFRARED, RS2_EXTENSION_VIDEO_FRAME, 2) {}
 

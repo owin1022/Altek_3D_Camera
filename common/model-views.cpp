@@ -6767,6 +6767,8 @@ namespace rs2
                     ImGui_ScopePushStyleColor(ImGuiCol_ButtonHovered, sensor_bg);
                     ImGui_ScopePushStyleColor(ImGuiCol_ButtonActive, sensor_bg);
 
+					std::string pid = dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
+
                     if (!sub->streaming)
                     {
                         std::string label = to_string() << "  " << textual_icons::toggle_off << "\noff   ##" << id << "," << sub->s->get_info(RS2_CAMERA_INFO_NAME);
@@ -6777,6 +6779,29 @@ namespace rs2
                         std::vector<stream_profile> profiles;
                         auto is_comb_supported = sub->is_selected_combination_supported();
                         bool can_stream = false;
+
+						if (pid == "99BB")
+						{
+							if(al3di_is_rgb_streaming)
+							{
+								bool enforce_inter_stream_policies = false;
+								std::vector<stream_profile> results = sub->get_selected_profiles(enforce_inter_stream_policies);
+								
+								if (results.size() > 1)
+								{
+									if(results[0].stream_type() == RS2_STREAM_DEPTH)
+									{
+										for (auto r : results)
+										{
+											if((r.stream_type() == RS2_STREAM_INFRARED)&&(r.stream_index() == 2))
+											{
+												is_comb_supported = false;
+											}
+										}
+									}
+								}
+							}
+						}
                         if (is_comb_supported)
                             can_stream = true;
                         else
@@ -6805,6 +6830,24 @@ namespace rs2
                                 }
                             }
                         }
+						if (pid == "99BB")
+						{
+							if(al3di_disable_rgb == true)
+							{
+								std::string friendly_name = sub->s->get_info(RS2_CAMERA_INFO_NAME);
+								if (friendly_name == "RGB Camera")
+								{
+									can_stream = false;
+									std::string text = to_string() << "  " << textual_icons::toggle_off << "\noff   ";
+									ImGui::TextDisabled("%s", text.c_str());
+
+									if (ImGui::IsItemHovered())
+									{
+										ImGui::SetTooltip("Selected value is not supported");
+									}
+								}
+							}
+						}
                         if (can_stream)
                         {
                             if (ImGui::Button(label.c_str(), { 30,30 }))
@@ -6826,6 +6869,24 @@ namespace rs2
                                     }
                                     _update_readonly_options_timer.set_expired();
                                     sub->play(profiles, viewer, dev_syncer);
+
+									if (pid == "99BB")
+									{	
+										if(profiles[0].stream_type() == RS2_STREAM_COLOR)
+										{
+											al3di_is_rgb_streaming = true;
+										}
+										else  if(profiles[0].stream_type() == RS2_STREAM_DEPTH)
+										{
+											for (auto r : profiles)
+											{
+												if((r.stream_type() == RS2_STREAM_INFRARED)&&(r.stream_index() == 2))
+												{
+													al3di_disable_rgb = true;
+												}
+											}
+										}	
+									}
                                 }
                                 catch (const error& e)
                                 {
@@ -6863,7 +6924,18 @@ namespace rs2
                             {
                                 viewer.synchronization_enable = viewer.synchronization_enable_prev_state.load();
                             }
+							if (pid == "99BB")
+							{
+								if (friendly_name == "Stereo Module")
+								{
+									al3di_disable_rgb = false;
+								}
 
+								if(friendly_name == "RGB Camera")
+								{
+									al3di_is_rgb_streaming = false;
+								}
+							}
                             if (!std::any_of(subdevices.begin(), subdevices.end(),
                                 [](const std::shared_ptr<subdevice_model>& sm)
                             {

@@ -87,7 +87,7 @@ typedef enum rs2_format
     RS2_FORMAT_INVI            , /**< 8-bit IR stream.  */
     RS2_FORMAT_W10             , /**< Grey-scale image as a bit-packed array. 4 pixel data stream taking 5 bytes */
     RS2_FORMAT_AL24            , /**< AL24 */
-    RS2_FORMAT_Z32             , /**< Ken++  Z32 */
+    RS2_FORMAT_AL32            , /**< AL32 */
     RS2_FORMAT_Z16H            , /**< Variable-length Huffman-compressed 16-bit depth values. */
     RS2_FORMAT_FG              , /**< 16-bit per-pixel frame grabber format. */
     RS2_FORMAT_Y411            , /**< 12-bit per-pixel. */

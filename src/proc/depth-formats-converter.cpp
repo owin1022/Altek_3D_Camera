@@ -153,8 +153,8 @@ namespace librealsense
 		std::memcpy(dest[0], source, depth_size);
 		std::memcpy(dest[1], source + depth_size, ir_size);
 	}
-	// Ken++  Z32
-	void al_converter::process_function(byte * const dest[], const byte * source, int width, int height, int actual_size, int input_size)
+
+	void al32_converter::process_function(byte * const dest[], const byte * source, int width, int height, int actual_size, int input_size)
 	{
 		auto depth_size = width*height*2;
 		auto ir_size =  width*height;

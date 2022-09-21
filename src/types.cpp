@@ -486,7 +486,7 @@ namespace librealsense
             CASE(INVI)
             CASE(W10)
 			CASE(AL24) 
-			CASE(Z32)   
+			CASE(AL32)   
             CASE(Z16H)
             CASE(FG)
             CASE(Y411)

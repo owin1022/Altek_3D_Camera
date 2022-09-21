@@ -149,7 +149,7 @@ MAP_FMT_TO_TYPE(RS2_FORMAT_Y8I, uint8_t);
 MAP_FMT_TO_TYPE(RS2_FORMAT_INVI, uint8_t);
 //MAP_FMT_TO_TYPE(RS2_FORMAT_W10, );
 //MAP_FMT_TO_TYPE(RS2_FORMAT_AL24,);
-MAP_FMT_TO_TYPE(RS2_FORMAT_Z32, uint32_t);
+MAP_FMT_TO_TYPE(RS2_FORMAT_AL32, uint32_t);
 MAP_FMT_TO_TYPE(RS2_FORMAT_FG, uint16_t);
 //MAP_FMT_TO_TYPE(RS2_FORMAT_Y411, ); // RS2_FORMAT_Y411 is 12 bit per pixel and don't fit to any type
 template <rs2_format FMT> struct itemsize {
@@ -190,7 +190,7 @@ template<template<rs2_format> class F>
     case RS2_FORMAT_INVI: return F<RS2_FORMAT_INVI>::func();
     case RS2_FORMAT_W10: return F<RS2_FORMAT_W10>::func();
 	case RS2_FORMAT_AL24: return F<RS2_FORMAT_AL24>::func();
-	case RS2_FORMAT_Z32: return F<RS2_FORMAT_Z32>::func();
+	case RS2_FORMAT_AL32: return F<RS2_FORMAT_AL32>::func();
     case RS2_FORMAT_FG: return F<RS2_FORMAT_FG>::func();
     case RS2_FORMAT_Y411: return F<RS2_FORMAT_Y411>::func();
     // c++11 standard doesn't allow throw in constexpr function switch case
