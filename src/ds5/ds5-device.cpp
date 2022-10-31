@@ -1465,10 +1465,14 @@ namespace librealsense
 
            }
        }
+#if 1 //al3d: if you want to do sw sync.. enable this
        if (
            ((_pid == AL3D_PID) && (_al3d_fw_version >= firmware_version("0.0.1.151"))) ||
            ((_pid == AL3Di_PID) && (_al3d_fw_version >= firmware_version("0.0.1.206")))
            ) //al3d sync pts time
+#else
+       if(0)
+#endif
        {
 
            auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);

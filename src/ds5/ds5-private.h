@@ -113,6 +113,7 @@ namespace librealsense
             ds::RS430I_PID,
             ds::RS465_PID,
             ds::RS455_PID,
+            ds::AL3Di_PID,
         };
 
         static const std::set<std::uint16_t> hid_bmi_055_pid = {

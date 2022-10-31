@@ -185,7 +185,7 @@ namespace librealsense
 
             for (auto&& g : groups)
             {
-                if (g.front().vid != VID_INTEL_CAMERA)
+                if (g.front().vid != VID_INTEL_CAMERA && g.front().vid != VID_ALTEK_CAMERA)
                     list.push_back(std::make_shared<platform_camera_info>(ctx, g));
             }
             return list;

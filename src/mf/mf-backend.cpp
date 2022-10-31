@@ -133,7 +133,7 @@ namespace librealsense
             wmf_hid_device::foreach_hid_device(action);
 
             
-#if 1  //for al3d
+#if 0  //20221031, disable this, we add al3di to hid_sensors_pid 
 			int max_retry_count = 30;
             if (devices.empty()) 
             {
