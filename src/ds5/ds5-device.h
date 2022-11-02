@@ -90,6 +90,7 @@ namespace librealsense
 
         firmware_version            _fw_version;
         firmware_version            _recommended_fw_version;
+        firmware_version            _al3d_fw_version;  //for al3d fw version
         ds::d400_caps               _device_capabilities;
 
         std::shared_ptr<stream_interface> _depth_stream;

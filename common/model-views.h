@@ -852,6 +852,9 @@ namespace rs2
         std::string selected_file_preset;
 
         std::vector<std::shared_ptr<notification_model>> related_notifications;
+        //al3di
+		bool al3di_disable_rgb = false;       
+		bool al3di_is_rgb_streaming = false;  
 
     private:
         // This class is in charge of camera accuracy health window parameters,

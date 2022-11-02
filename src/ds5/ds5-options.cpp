@@ -874,5 +874,96 @@ namespace librealsense
 
     }
 
-   
+    //al3d for device commands
+    al3d_device_xu_option::al3d_device_xu_option(uvc_sensor& ep)
+        : _ep(ep)
+    {
+
+    }
+    bool al3d_device_xu_option::set_PTS_Time(uint32_t host_second, uint32_t host_nanosecond) 
+    {
+        auto rc = static_cast<bool>(_ep.invoke_powered(
+            [this, host_second, host_nanosecond](platform::uvc_device& dev)
+            {
+
+                std::vector<uint8_t> transmit_buf(8, 0);  //8byte
+                uint8_t *p = transmit_buf.data();
+                memcpy(p+0, (uint8_t*)&host_second, 4);
+                memcpy(p+4, (uint8_t*)&host_nanosecond, 4);
+                if (!dev.set_xu(ds::depth_xu,
+                    ds::AL3D_Sync_PTS_Time,
+                    transmit_buf.data(),
+                    static_cast<int>(transmit_buf.size())
+                ))
+                {
+                    throw invalid_value_exception(to_string() << "set_xu failed!" << " Last Error: " << strerror(errno));
+                }
+               
+
+                return 0;
+            }));
+
+        return 0;
+    }
+
+    bool al3d_device_xu_option::get_PTS_Time(uint32_t* camera_second, uint32_t* camera_nanosecond)
+    {
+        auto rc = static_cast<bool>(_ep.invoke_powered(
+            [this, camera_second, camera_nanosecond](platform::uvc_device& dev)
+            {
+                
+                std::vector<uint8_t> transmit_buf(8, 0);  //8byte
+                uint8_t* p = transmit_buf.data();
+                if (!dev.get_xu(ds::depth_xu,
+                    ds::AL3D_Sync_PTS_Time,
+                    transmit_buf.data(),
+                    static_cast<int>(transmit_buf.size())
+                ))
+                {
+                    throw invalid_value_exception(to_string() << "get_xu failed!" << " Last Error: " << strerror(errno));
+                }
+
+                memcpy((uint8_t*)camera_second,p, 4);
+                memcpy((uint8_t*)camera_nanosecond, p+4, 4);
+                return 0;
+            }));
+        return 0;
+    }
+
+    bool al3d_device_xu_option::check_PTS_Time_Diff(uint32_t host_second, uint32_t host_nanosecond, uint32_t* diff_second, uint32_t* diff_nanosecond)
+    {
+        auto rc = static_cast<bool>(_ep.invoke_powered(
+            [this, host_second, host_nanosecond, diff_second, diff_nanosecond](platform::uvc_device& dev)
+            {
+
+                std::vector<uint8_t> transmit_buf(8, 0);  //8byte
+                uint8_t* p = transmit_buf.data();
+                memcpy(p + 0, (uint8_t*)&host_second, 4);
+                memcpy(p + 4, (uint8_t*)&host_nanosecond, 4);
+                if (!dev.set_xu(ds::depth_xu,
+                    ds::AL3D_PTS_Time_Diff,
+                    transmit_buf.data(),
+                    static_cast<int>(transmit_buf.size())
+                ))
+                {
+                    throw invalid_value_exception(to_string() << "set_xu failed!" << " Last Error: " << strerror(errno));
+                }
+
+                if (!dev.get_xu(ds::depth_xu,
+                    ds::AL3D_PTS_Time_Diff,
+                    transmit_buf.data(),
+                    static_cast<int>(transmit_buf.size())
+                ))
+                {
+                    throw invalid_value_exception(to_string() << "get_xu failed!" << " Last Error: " << strerror(errno));
+                }
+
+                memcpy((uint8_t*)diff_second, p, 4);
+                memcpy((uint8_t*)diff_nanosecond, p + 4, 4);
+
+                return 0;
+            }));
+
+        return 0;
+    }
 }

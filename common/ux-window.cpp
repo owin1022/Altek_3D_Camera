@@ -21,6 +21,8 @@
 
 #include <iostream>
 
+#include "altek/alVersion.h"
+
 void glfw_error_callback(int error, const char* description)
 {
     std::cerr << "GLFW Driver Error: " << description << "\n";
@@ -263,6 +265,8 @@ namespace rs2
 
         rs2_error* e = nullptr;
         _title_str = to_string() << _title << " v" << api_version_to_string(rs2_get_api_version(&e));
+		_title_str.append(AL_GIT_BUILD_VERSION);
+		
         auto debug = is_debug();
         if (debug)
         {

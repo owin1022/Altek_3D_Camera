@@ -6,7 +6,7 @@
 #endif
 
 #include <ntverp.h>
-#if 1 // Ken++  skip win10 uvc
+#if 0 // Ken++  skip win10 uvc
 #else
 #if VER_PRODUCTBUILD <= 9600    // (WinSDK 8.1)
 #ifdef ENFORCE_METADATA

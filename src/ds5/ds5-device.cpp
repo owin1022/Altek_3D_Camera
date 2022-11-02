@@ -42,6 +42,9 @@
 #include "fw-update/fw-update-unsigned.h"
 #include "../third-party/json.hpp"
 
+#include <chrono>
+
+
 #ifdef HWM_OVER_XU
 constexpr bool hw_mon_over_xu = true;
 #else
@@ -60,7 +63,8 @@ namespace librealsense
         {rs_fourcc('Y','1','6',' '), RS2_FORMAT_Y16},
         {rs_fourcc('Y','1','2','I'), RS2_FORMAT_Y12I},
         {rs_fourcc('Z','1','6',' '), RS2_FORMAT_Z16},
-        {rs_fourcc('Z','3','2',' '), RS2_FORMAT_Z32},
+        {rs_fourcc('A','L','2','4'), RS2_FORMAT_AL24},
+        {rs_fourcc('A','L','3','2'), RS2_FORMAT_AL32},
         {rs_fourcc('Z','1','6','H'), RS2_FORMAT_Z16H},
         {rs_fourcc('R','G','B','2'), RS2_FORMAT_BGR8},
         {rs_fourcc('M','J','P','G'), RS2_FORMAT_MJPEG},
@@ -78,6 +82,8 @@ namespace librealsense
         {rs_fourcc('Y','1','2','I'), RS2_STREAM_INFRARED},
         {rs_fourcc('R','G','B','2'), RS2_STREAM_INFRARED},
         {rs_fourcc('Z','1','6',' '), RS2_STREAM_DEPTH},
+		{rs_fourcc('A','L','2','4'), RS2_STREAM_DEPTH},
+		{rs_fourcc('A','L','3','2'), RS2_STREAM_DEPTH},        
         {rs_fourcc('Z','1','6','H'), RS2_STREAM_DEPTH},
         {rs_fourcc('B','Y','R','2'), RS2_STREAM_COLOR},
         {rs_fourcc('M','J','P','G'), RS2_STREAM_COLOR}
@@ -873,13 +879,6 @@ namespace librealsense
         depth_ep->register_processing_block(processing_block_factory::create_id_pbf(RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1));
         depth_ep->register_processing_block(processing_block_factory::create_id_pbf(RS2_FORMAT_Z16, RS2_STREAM_DEPTH));
 
-#if 1  // Ken++  Z32
-		depth_ep->register_processing_block(
-			{ { RS2_FORMAT_Z32 } },
-			{ { RS2_FORMAT_Z16, RS2_STREAM_DEPTH, 0 },{ RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1 }, {RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 2} },
-			[]() {return std::make_shared<al_converter>(); });
-#endif 
-
         depth_ep->register_processing_block({ {RS2_FORMAT_W10} }, { {RS2_FORMAT_RAW10, RS2_STREAM_INFRARED, 1} }, []() { return std::make_shared<w10_converter>(RS2_FORMAT_RAW10); });
         depth_ep->register_processing_block({ {RS2_FORMAT_W10} }, { {RS2_FORMAT_Y10BPACK, RS2_STREAM_INFRARED, 1} }, []() { return std::make_shared<w10_converter>(RS2_FORMAT_Y10BPACK); });
 
@@ -996,6 +995,7 @@ namespace librealsense
         _fw_version = firmware_version(fwv);
         auto fwv_debug = _hw_monitor->get_firmware_version_string(gvd_buff, al3d_fw_version_offset);
         _recommended_fw_version = firmware_version(fwv_debug); //for al3d debug
+        _al3d_fw_version = firmware_version(fwv_debug); //for al3d fw version
 #endif
         
         if (_fw_version >= firmware_version("5.10.4.0"))
@@ -1036,6 +1036,20 @@ namespace librealsense
             { {RS2_FORMAT_Y16, RS2_STREAM_INFRARED, 1}, {RS2_FORMAT_Y16, RS2_STREAM_INFRARED, 2} },
             []() {return std::make_shared<y12i_to_y16y16>(); }
         );
+		
+		if (_pid == ds::AL3Di_PID)//al3di
+		{
+			depth_sensor.register_processing_block(
+				{ { RS2_FORMAT_AL24 } },
+				{ { RS2_FORMAT_Z16, RS2_STREAM_DEPTH, 0 },{ RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1 } },
+				[]() {return std::make_shared<al24_converter>(); });
+
+
+			depth_sensor.register_processing_block(
+				{ { RS2_FORMAT_AL32 } },
+				{ { RS2_FORMAT_Z16, RS2_STREAM_DEPTH, 0 },{ RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 1 }, {RS2_FORMAT_Y8, RS2_STREAM_INFRARED, 2} },
+				[]() {return std::make_shared<al32_converter>(); });
+		}
 
         auto pid_hex_str = hexify(_pid);
 
@@ -1403,9 +1417,9 @@ namespace librealsense
         register_info(RS2_CAMERA_INFO_ADVANCED_MODE, ((advanced_mode) ? "YES" : "NO"));
         register_info(RS2_CAMERA_INFO_PRODUCT_ID, pid_hex_str);
 
-        //if (_pid == AL3D_PID) //if (_pid == RBEYE_PID)
+        //if ((_pid == AL3D_PID) ||(_pid == AL3Di_PID) )
         //{
-        //    register_info(RS2_CAMERA_INFO_PRODUCT_LINE, "alRobotEye");
+        //    register_info(RS2_CAMERA_INFO_PRODUCT_LINE, "AL3D");
         //}
         //else
         {
@@ -1418,6 +1432,75 @@ namespace librealsense
             register_info(RS2_CAMERA_INFO_USB_TYPE_DESCRIPTOR, usb_type_str);
 
         std::string curr_version= _fw_version;
+
+       if (
+           ((_pid == AL3D_PID)  && (_al3d_fw_version >= firmware_version("0.0.1.147"))) || 
+           ((_pid == AL3Di_PID) && (_al3d_fw_version >= firmware_version("0.0.1.192")))
+          ) //al3d sync pts time
+       {
+            
+           auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
+   
+           {
+               //set current host time to al3d camera
+               auto now_epoch_set = std::chrono::system_clock::now().time_since_epoch();
+               auto seconds_set = std::chrono::duration_cast<std::chrono::seconds>(now_epoch_set);
+               auto nanosecond_set = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_set - seconds_set);
+               al3d_device_xu_cmd->set_PTS_Time((uint32_t)seconds_set.count(), (uint32_t)nanosecond_set.count());
+#if 0  //example to get camera pts time
+               //get diff time between al3d camera and host pc
+               uint32_t camera_pts_second = 0;
+               uint32_t camera_pts_nanosecond = 0;
+               //host record current time epoch.
+               auto now_epoch_host = std::chrono::system_clock::now().time_since_epoch();
+               al3d_device_xu_cmd->get_PTS_Time(&camera_pts_second, &camera_pts_nanosecond);
+
+
+               //time diff 
+               auto get_start_time = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_host);
+               auto get_end_time = std::chrono::seconds(camera_pts_second) + std::chrono::nanoseconds(camera_pts_nanosecond);
+               auto get_time_diff = std::chrono::duration_cast<std::chrono::microseconds>(get_start_time - get_end_time);
+               //LOG_INFO("Get cTime Diff (microseconds): " << std::to_string(abs(get_time_diff.count())));
+#endif            
+
+           }
+       }
+#if 1 //al3d: if you want to do sw sync.. enable this
+       if (
+           ((_pid == AL3D_PID) && (_al3d_fw_version >= firmware_version("0.0.1.151"))) ||
+           ((_pid == AL3Di_PID) && (_al3d_fw_version >= firmware_version("0.0.1.206")))
+           ) //al3d sync pts time
+#else
+       if(0)
+#endif
+       {
+
+           auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
+           for (int i = 0; i < 30; i++)
+           {
+               //set current host time to al3d camera
+               auto now_epoch_set = std::chrono::system_clock::now().time_since_epoch();
+               auto seconds_set = std::chrono::duration_cast<std::chrono::seconds>(now_epoch_set);
+               auto nanosecond_set = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_set - seconds_set);
+               al3d_device_xu_cmd->set_PTS_Time((uint32_t)seconds_set.count(), (uint32_t)nanosecond_set.count());         
+
+               uint32_t diff_pts_second = 0;
+               uint32_t diff_pts_nanosecond = 0;
+               now_epoch_set = std::chrono::system_clock::now().time_since_epoch();
+               seconds_set = std::chrono::duration_cast<std::chrono::seconds>(now_epoch_set);
+               nanosecond_set = std::chrono::duration_cast<std::chrono::nanoseconds>(now_epoch_set - seconds_set);
+               al3d_device_xu_cmd->check_PTS_Time_Diff((uint32_t)seconds_set.count(), (uint32_t)nanosecond_set.count(), &diff_pts_second, &diff_pts_nanosecond);
+               auto diff_time = std::chrono::seconds(diff_pts_second) + std::chrono::microseconds(diff_pts_nanosecond);
+
+               if (diff_time.count() < 800 || i == 29)  //800us
+               {
+                   LOG_INFO(std::to_string(i) << " Time Diff (microseconds): " << std::to_string(diff_time.count()));
+                   break;
+               }                  
+           }
+       }
+       
+      
 
     }
 

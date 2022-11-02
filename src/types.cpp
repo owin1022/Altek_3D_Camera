@@ -446,6 +446,7 @@ namespace librealsense
             CASE(TRANSMITTER_FREQUENCY)
             CASE(VERTICAL_BINNING)
             CASE(RECEIVER_SENSITIVITY)
+            case RS2_OPTION_SYNC_PTS_TIME: return "Camera PTS Time";  //al3d
         default: assert(!is_valid(value)); return UNKNOWN_VALUE;
         }
 #undef CASE
@@ -484,10 +485,11 @@ namespace librealsense
             CASE(INZI)
             CASE(INVI)
             CASE(W10)
+			CASE(AL24) 
+			CASE(AL32)   
             CASE(Z16H)
             CASE(FG)
             CASE(Y411)
-            CASE(Z32) // Ken++  Z32
         default: assert(!is_valid(value)); return UNKNOWN_VALUE;
         }
 #undef CASE

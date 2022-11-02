@@ -1593,12 +1593,7 @@ namespace rs2
                     if (streaming)
                     {
                         label = to_string() << stream_display_names[f.first] << (show_single_fps_list ? "" : " stream:");
-
-					   if (f.first == 1)// Ken ++ demo
-					   {                            
-					   		label = to_string() << "Infrared " << f.first;
-					   }
-											   
+			   
                         ImGui::Text("%s", label.c_str());
                         streaming_tooltip();
                     }
@@ -1606,12 +1601,7 @@ namespace rs2
                     {
                         auto tmp = stream_enabled;
                         label = to_string() << stream_display_names[f.first] << "##" << f.first;
-
-                       if (f.first == 1) // Ken ++ demo
-					   {                            
-					   		label = to_string() << "Infrared " << f.first;
-					   }
-											   
+			   
                         if (ImGui::Checkbox(label.c_str(), &stream_enabled[f.first]))
                         {
                             prev_stream_enabled = tmp;
@@ -2342,9 +2332,18 @@ namespace rs2
         profile = f.get_profile();
         frame_number = f.get_frame_number();
         timestamp_domain = f.get_frame_timestamp_domain();
+#if 0
         timestamp = f.get_timestamp();
         fps.add_timestamp(f.get_timestamp(), f.get_frame_number());
-
+#else //for al3d  hardware fps
+        rs2_metadata_type sensor_timestamp_pts = f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_TIMESTAMP);
+        timestamp = sensor_timestamp_pts;
+        #if 0  //al3d, will check later..
+        fps.add_timestamp(f.get_timestamp(), f.get_frame_number());
+        #else
+        fps.add_timestamp(timestamp/1000, f.get_frame_number());
+        #endif
+#endif
         view_fps.add_timestamp(glfwGetTime() * 1000, count++);
 
         // populate frame metadata attributes
@@ -2704,22 +2703,12 @@ namespace rs2
             std::string sensor_name = dev->s->get_info(RS2_CAMERA_INFO_NAME);
             std::string stream_name = rs2_stream_to_string(profile.stream_type());
 
-			#if 1  // Ken ++ demo
-			auto dev_index =  profile.stream_index();
-
-			
-			if(dev_index == 1)
+			if(RS2_STREAM_INFRARED == profile.stream_type())
 			{
-				stream_name = rs2_stream_to_string(RS2_STREAM_COLOR);
-			}
-			else
-			{
-				stream_name = rs2_stream_to_string(profile.stream_type());
+				auto dev_index =  profile.stream_index();
+				stream_name =  to_string() << stream_name << " " << dev_index;	
 			}
 
-			#else
-			std::string stream_name = rs2_stream_to_string(profile.stream_type());
-			#endif
 			
             tooltip = to_string() << dev_name << " s.n:" << dev_serial << " | " << sensor_name << ", " << stream_name << " stream";
             const auto approx_char_width = 12;
@@ -6778,6 +6767,8 @@ namespace rs2
                     ImGui_ScopePushStyleColor(ImGuiCol_ButtonHovered, sensor_bg);
                     ImGui_ScopePushStyleColor(ImGuiCol_ButtonActive, sensor_bg);
 
+					std::string pid = dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
+
                     if (!sub->streaming)
                     {
                         std::string label = to_string() << "  " << textual_icons::toggle_off << "\noff   ##" << id << "," << sub->s->get_info(RS2_CAMERA_INFO_NAME);
@@ -6788,6 +6779,29 @@ namespace rs2
                         std::vector<stream_profile> profiles;
                         auto is_comb_supported = sub->is_selected_combination_supported();
                         bool can_stream = false;
+
+						if (pid == "99BB")
+						{
+							if(al3di_is_rgb_streaming)
+							{
+								bool enforce_inter_stream_policies = false;
+								std::vector<stream_profile> results = sub->get_selected_profiles(enforce_inter_stream_policies);
+								
+								if (results.size() > 1)
+								{
+									if(results[0].stream_type() == RS2_STREAM_DEPTH)
+									{
+										for (auto r : results)
+										{
+											if((r.stream_type() == RS2_STREAM_INFRARED)&&(r.stream_index() == 2))
+											{
+												is_comb_supported = false;
+											}
+										}
+									}
+								}
+							}
+						}
                         if (is_comb_supported)
                             can_stream = true;
                         else
@@ -6816,6 +6830,24 @@ namespace rs2
                                 }
                             }
                         }
+						if (pid == "99BB")
+						{
+							if(al3di_disable_rgb == true)
+							{
+								std::string friendly_name = sub->s->get_info(RS2_CAMERA_INFO_NAME);
+								if (friendly_name == "RGB Camera")
+								{
+									can_stream = false;
+									std::string text = to_string() << "  " << textual_icons::toggle_off << "\noff   ";
+									ImGui::TextDisabled("%s", text.c_str());
+
+									if (ImGui::IsItemHovered())
+									{
+										ImGui::SetTooltip("Selected value is not supported");
+									}
+								}
+							}
+						}
                         if (can_stream)
                         {
                             if (ImGui::Button(label.c_str(), { 30,30 }))
@@ -6837,6 +6869,24 @@ namespace rs2
                                     }
                                     _update_readonly_options_timer.set_expired();
                                     sub->play(profiles, viewer, dev_syncer);
+
+									if (pid == "99BB")
+									{	
+										if(profiles[0].stream_type() == RS2_STREAM_COLOR)
+										{
+											al3di_is_rgb_streaming = true;
+										}
+										else  if(profiles[0].stream_type() == RS2_STREAM_DEPTH)
+										{
+											for (auto r : profiles)
+											{
+												if((r.stream_type() == RS2_STREAM_INFRARED)&&(r.stream_index() == 2))
+												{
+													al3di_disable_rgb = true;
+												}
+											}
+										}	
+									}
                                 }
                                 catch (const error& e)
                                 {
@@ -6874,7 +6924,18 @@ namespace rs2
                             {
                                 viewer.synchronization_enable = viewer.synchronization_enable_prev_state.load();
                             }
+							if (pid == "99BB")
+							{
+								if (friendly_name == "Stereo Module")
+								{
+									al3di_disable_rgb = false;
+								}
 
+								if(friendly_name == "RGB Camera")
+								{
+									al3di_is_rgb_streaming = false;
+								}
+							}
                             if (!std::any_of(subdevices.begin(), subdevices.end(),
                                 [](const std::shared_ptr<subdevice_model>& sm)
                             {
