@@ -5,7 +5,6 @@
 #include "backend-hid.h"
 #include "backend.h"
 #include "types.h"
-#include "../ds5/ds5-private.h"
 
 #include <thread>
 #include <chrono>
@@ -24,7 +23,6 @@ const size_t HID_DATA_ACTUAL_SIZE = 6;  // bytes
 const std::string IIO_DEVICE_PREFIX("iio:device");
 const std::string IIO_ROOT_PATH("/sys/bus/iio/devices");
 const std::string HID_CUSTOM_PATH("/sys/bus/platform/drivers/hid_sensor_custom");
-bool gbroboteye = false;
 
 //#define DEBUG_HID
 #ifdef DEBUG_HID
@@ -545,9 +543,9 @@ namespace librealsense
 
                     ssize_t read_size = 0;
                     struct timeval tv = {5, 0};
-                 //   LOG_DEBUG_HID("HID IIO Select initiated");
+                    LOG_DEBUG_HID("HID IIO Select initiated");
                     auto val = select(max_fd + 1, &fds, nullptr, nullptr, &tv);
-                //    LOG_DEBUG_HID("HID IIO Select done, val = " << val);
+                    LOG_DEBUG_HID("HID IIO Select done, val = " << val);
 
                     if (val < 0)
                     {
@@ -591,7 +589,6 @@ namespace librealsense
                             sensor_data sens_data{};
                             sens_data.sensor = hid_sensor{get_sensor_name()};
 
-                        // LOG_DEBUG("hid_sensor :" <<  get_sensor_name());
                             auto hid_data_size = channel_size - (metadata ? HID_METADATA_SIZE : 0);
                             // Populate HID IMU data - Header
                             metadata_hid_raw meta_data{};
@@ -620,31 +617,9 @@ namespace librealsense
 
 //                            for (auto i=0ul; i<channel_size; i++)
 //                                std::cout << std::hex << int(p_raw_data[i]) << " ";
-//                            std::cout << std::dec << std::endl;                           
-        
-                           this->_callback(sens_data);
+//                            std::cout << std::dec << std::endl;
 
-                          if (*((unsigned short*)(p_raw_data+24)) > 0 && gbroboteye)                            
-                       //if (0)
-                        {                         
-                                if (p_raw_data[0] == 1) 
-                                {
-                                    p_raw_data[0]=2;
-                                    sens_data.sensor = hid_sensor{"gyro_3d"};
-                                }
-                                else if (p_raw_data[0] == 2) 
-                                {
-                                    p_raw_data[0]=1;
-                                    sens_data.sensor = hid_sensor{"accel_3d"};
-                                }
-                                memcpy(p_raw_data+10 , p_raw_data+24 ,6);  
-                                now_ts = std::chrono::duration<double, std::milli>(std::chrono::system_clock::now().time_since_epoch()).count();
-                                sens_data.fo = {hid_data_size, metadata? meta_data.header.length: uint8_t(0),
-                                            p_raw_data,  metadata? &meta_data : nullptr, now_ts};
-
-                              this->_callback(sens_data);
-                            }
-
+                            this->_callback(sens_data);
                         }
                         if (sz > 2)
                         {
@@ -1281,7 +1256,6 @@ namespace librealsense
                 device_info.id = dev_name;
                 device_info.device_path = device_path;
             }
-            if ((pid == "99aa") || (pid == "99bb") || (pid == "99AA") || (pid == "99BB"))  gbroboteye = true;
 
             return valid;
         }

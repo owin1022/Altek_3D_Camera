@@ -13,7 +13,6 @@
 #include "mf-hid.h"
 #include "win/win-helpers.h"
 #include "metadata.h"
-#include "../ds5/ds5-private.h"
 
 #include <PortableDeviceTypes.h>
 //#include <PortableDeviceClassExtension.h>
@@ -33,19 +32,17 @@
 // Windows Filetime is represented in 64 - bit number of 100 - nanosecond intervals since midnight Jan 1, 1601
 // To convert to the Unix epoch, subtract 116444736000000000LL to reach Jan 1, 1970.
 constexpr uint64_t WIN_FILETIME_2_UNIX_SYSTIME = 116444736000000000LL;
-bool gbroboteye = false;
 
 namespace librealsense
 {
     namespace platform
     {
-        bool wmf_hid_device::m_broboteye = false;
         class sensor_events : public ISensorEvents
         {
         public:
             virtual ~sensor_events() = default;
 
-            explicit sensor_events(hid_callback callback) : m_cRef(0), _callback(callback) {}          
+            explicit sensor_events(hid_callback callback) : m_cRef(0), _callback(callback) {}
 
             STDMETHODIMP QueryInterface(REFIID iid, void** ppv)
             {
@@ -66,7 +63,7 @@ namespace librealsense
                     *ppv = NULL;
                     return E_NOINTERFACE;
                 }
-                AddRef();               
+                AddRef();
                 return S_OK;
             }
 
@@ -131,16 +128,6 @@ namespace librealsense
                 CHECK_HR(report->GetSensorValue(SENSOR_DATA_TYPE_CUSTOM_VALUE7, &var));
                 uint8_t usb_count = var.bVal;
 
-                double tmprawX, tmprawY, tmprawZ;
-                tmprawX = 0;
-                CHECK_HR(report->GetSensorValue(SENSOR_DATA_TYPE_CUSTOM_VALUE3, &var));
-                tmprawX = var.dblVal;
-                CHECK_HR(report->GetSensorValue(SENSOR_DATA_TYPE_CUSTOM_VALUE4, &var));
-                tmprawY = var.dblVal;
-                CHECK_HR(report->GetSensorValue(SENSOR_DATA_TYPE_CUSTOM_VALUE5, &var));
-                tmprawZ = var.dblVal;
-        
-
                 /* Retrieve sensor type - Sensor types are more specific groupings than sensor categories. Sensor type IDs are GUIDs that are defined in Sensors.h */
 
                 SENSOR_TYPE_ID type{};
@@ -166,14 +153,6 @@ namespace librealsense
                     rawX *= accelerator_transform_factor;
                     rawY *= accelerator_transform_factor;
                     rawZ *= accelerator_transform_factor;
-
-                    if (tmprawX)
-                    {
-                        static constexpr double gyro_transform_factor = 10.0;
-                        tmprawX *= gyro_transform_factor;
-                        tmprawY *= gyro_transform_factor;
-                        tmprawZ *= gyro_transform_factor;
-                    }
                 }
                 else if (type == SENSOR_TYPE_GYROMETER_3D)
                 {
@@ -194,15 +173,6 @@ namespace librealsense
                     rawX *= gyro_transform_factor;
                     rawY *= gyro_transform_factor;
                     rawZ *= gyro_transform_factor;
-
-                    if (tmprawX)
-                    {
-                        static constexpr double accelerator_transform_factor = 1000.0;
-
-                        tmprawX *= accelerator_transform_factor;
-                        tmprawY *= accelerator_transform_factor;
-                        tmprawZ *= accelerator_transform_factor;
-                    }
                 }
                 else
                 {
@@ -238,7 +208,6 @@ namespace librealsense
                 pSensor->GetFriendlyName(&fName);
                 d.sensor.name = CW2A(fName);
                 SysFreeString(fName); // free string after it was copied to sensor data
-                
 
                 d.fo.pixels = &data;
                 d.fo.metadata = &meta_data;
@@ -253,30 +222,6 @@ namespace librealsense
 
                 _callback(d);
 
-               // if (wmf_hid_device::m_broboteye)
-                if (gbroboteye && tmprawX)
-                {
-                    customTimestampLow += 1000;
-                    meta_data.header.timestamp = customTimestampLow | (customTimestampHigh < 32);
-                    data.ts_low = customTimestampLow;
-                    meta_data.report_type.imu_report.custom_timestamp = customTimestampLow | (customTimestampHigh < 32);
-
-                    if (type == SENSOR_TYPE_ACCELEROMETER_3D)
-                        d.sensor.name = CW2A(L"HID Sensor Class Device: Gyroscope");
-                    else if (type == SENSOR_TYPE_GYROMETER_3D)
-                        d.sensor.name =  CW2A(L"HID Sensor Class Device: Accelerometer");
-                    data.x = static_cast<int16_t>(tmprawX);
-                    data.y = static_cast<int16_t>(tmprawY);
-                    data.z = static_cast<int16_t>(tmprawZ);                      
-                    if (SystemTimeToFileTime(&sys_time, &file_time))
-                    {
-                        auto ll_now = (LONGLONG)file_time.dwLowDateTime + ((LONGLONG)(file_time.dwHighDateTime) << 32LL) - WIN_FILETIME_2_UNIX_SYSTIME;
-                        d.fo.backend_time = ll_now * 0.0001; //100 nano-sec to millisec
-                    }
-
-                    _callback(d); 
-                }
-                
                 return S_OK;
             }
 
@@ -382,12 +327,11 @@ namespace librealsense
 
         void wmf_hid_device::start_capture(hid_callback callback)
         {
-
             // Hack, start default profile
             _cb = new sensor_events(callback);
             ISensorEvents* sensorEvents = nullptr;
             CHECK_HR(_cb->QueryInterface(IID_PPV_ARGS(&sensorEvents)));
- 
+
             for (auto& sensor : _opened_sensors)
             {
                 CHECK_HR(sensor->start_capture(sensorEvents));
@@ -417,10 +361,9 @@ namespace librealsense
         {
             return std::vector<uint8_t>();
         }
-                
+
         void wmf_hid_device::foreach_hid_device(std::function<void(hid_device_info, CComPtr<ISensor>)> action)
         {
-            using namespace ds;
             /* Enumerate all HID devices and run action function on each device */
             try
             {
@@ -513,8 +456,7 @@ namespace librealsense
                                                     }
 
                                                     info.pid = to_string() << std::hex << pid;
-                                                    info.vid = to_string() << std::hex << vid;                                                                                                  
-                                                    if ((pid == ds::AL3D_PID) || (pid == ds::AL3Di_PID))  gbroboteye = true;
+                                                    info.vid = to_string() << std::hex << vid;
                                                 }
                                             }
                                             if (IsEqualPropertyKey(propertyKey, SENSOR_PROPERTY_SERIAL_NUMBER))
