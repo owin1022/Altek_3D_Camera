@@ -846,6 +846,33 @@ namespace librealsense
         return res;
     }
 
+    std::vector<uint8_t> auto_calibrated::get_calibration_table_by_id(int table_id) const
+    {
+        using namespace ds;
+
+        std::vector<uint8_t> res;
+
+        if ((table_id != ds::coefficients_table_id) && (table_id != ds::rgb_calibration_id))
+            throw std::runtime_error("Invalid table id");
+
+        // Fetch current calibration using GETINITCAL command
+        command cmd(ds::GETINTCAL, table_id);
+        auto calib = _hw_monitor->send(cmd);
+
+        if (calib.size() < sizeof(table_header)) throw std::runtime_error("Missing calibration header from GETINITCAL!");
+
+        auto table = (uint8_t*)(calib.data() + sizeof(table_header));
+        auto hd = (table_header*)(calib.data());
+
+        if (calib.size() < sizeof(table_header) + hd->table_size)
+            throw std::runtime_error("Table truncated from GETINITCAL!");
+
+        res.resize(sizeof(table_header) + hd->table_size, 0);
+        memcpy(res.data(), hd, res.size()); // Copy to old_calib
+
+        return res;
+    }
+
     void auto_calibrated::write_calibration() const
     {
         using namespace ds;

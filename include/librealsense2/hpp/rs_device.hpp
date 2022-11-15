@@ -547,6 +547,26 @@ namespace rs2
 
             return results;
         }
+        //al3d
+        calibration_table get_calibration_table_by_id(int table_id)
+        {
+            std::vector<uint8_t> results;
+
+            rs2_error* e = nullptr;
+            std::shared_ptr<const rs2_raw_data_buffer> list(
+                rs2_get_calibration_table_by_id(_dev.get(), &e, table_id),
+                rs2_delete_raw_data);
+            error::handle(e);
+
+            auto size = rs2_get_raw_data_size(list.get(), &e);
+            error::handle(e);
+
+            auto start = rs2_get_raw_data(list.get(), &e);
+
+            results.insert(results.begin(), start, start + size);
+
+            return results;
+        }
 
         /**
         *  Set current table to dynamic area.

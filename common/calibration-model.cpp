@@ -560,8 +560,16 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
 {
     const auto window_name = "altek Calibration Window";
 
+
     if (to_open)
     {
+#if 1  //example to get rgb calibration data
+        //al3d
+        //coefficients_table_id = 25,
+        //rgb_calibration_id = 32,
+        std::vector<uint8_t> calibration_rgb;
+        calibration_rgb = dev.as<rs2::auto_calibrated_device>().get_calibration_table_by_id(librealsense::ds::rgb_calibration_id);
+#endif
         try
         {
             _calibration = dev.as<rs2::auto_calibrated_device>().get_calibration_table();

@@ -445,7 +445,7 @@ const rs2_raw_data_buffer* rs2_run_tare_calibration(rs2_device* dev, float groun
 * \return    Calibration table
 */
 const rs2_raw_data_buffer* rs2_get_calibration_table(const rs2_device* dev, rs2_error** error);
-
+const rs2_raw_data_buffer* rs2_get_calibration_table_by_id(const rs2_device* dev, rs2_error** error, int table_id); //al3d
 /**
 *  Set current table to dynamic area.
 * \param[in]     Calibration table
