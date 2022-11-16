@@ -122,6 +122,11 @@ namespace librealsense
             return *it;
         }
 
+        const rs_usb_interface usb_device_winusb::get_interface_isoc(uint8_t interface_number , uint16_t maxpacketsize) const
+        {
+            return nullptr;
+        }
+
         const std::shared_ptr<usb_messenger> usb_device_winusb::open(uint8_t interface_number)
         {
             auto i = get_interface(interface_number);

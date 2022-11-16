@@ -46,7 +46,7 @@ namespace librealsense
             int length = 0;
             usb_status rv = control_transfer(requestType, request, value, ep, buffer, length, transferred, timeout_ms);
             if(rv == RS2_USB_STATUS_SUCCESS)
-                LOG_INFO("USB pipe " << ep << " reset successfully");
+                LOG_INFO("USB pipe " << std::hex << ep << " reset successfully");
             else
                 LOG_WARNING("Failed to reset the USB pipe " << ep << ", error: " << usb_status_to_string.at(rv).c_str());
             return rv;
@@ -54,6 +54,7 @@ namespace librealsense
 
         usb_status usb_messenger_usbhost::control_transfer(int request_type, int request, int value, int index, uint8_t* buffer, uint32_t length, uint32_t& transferred, uint32_t timeout_ms)
         {
+    //        LOG_DEBUG("usb_device_control_transfer 01");
             auto sts = usb_device_control_transfer(_device->get_handle(), request_type, request, value, index, buffer, length, timeout_ms);
             if(sts < 0)
             {
@@ -67,6 +68,7 @@ namespace librealsense
 
         usb_status usb_messenger_usbhost::bulk_transfer(const std::shared_ptr<usb_endpoint>&  endpoint, uint8_t* buffer, uint32_t length, uint32_t& transferred, uint32_t timeout_ms)
         {
+    //        LOG_DEBUG("aa usb_device_bulk_transfer start");
             auto sts = usb_device_bulk_transfer(_device->get_handle(), endpoint->get_address(), buffer, length, timeout_ms);
             if(sts < 0)
             {
@@ -75,6 +77,12 @@ namespace librealsense
                 return usbhost_status_to_rs(errno);
             }
             transferred = sts;
+            return RS2_USB_STATUS_SUCCESS;
+        }
+
+        usb_status usb_messenger_usbhost::isoc_transfer(const std::shared_ptr<usb_endpoint>&  endpoint, uint8_t* buffer, uint32_t length, uint32_t& transferred, uint32_t timeout_ms)
+        {
+
             return RS2_USB_STATUS_SUCCESS;
         }
 
@@ -93,6 +101,12 @@ namespace librealsense
         usb_status usb_messenger_usbhost::cancel_request(const rs_usb_request& request)
         {
             return _device->cancel_request(request);
+        }
+
+        usb_status usb_messenger_usbhost::set_interface(unsigned int interface , unsigned int alt_setting)
+        {
+            usb_device_set_interface( _device->get_handle() , interface , alt_setting);
+            return RS2_USB_STATUS_SUCCESS;
         }
     }
 }

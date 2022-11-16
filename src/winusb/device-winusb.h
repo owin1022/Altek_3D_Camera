@@ -37,6 +37,7 @@ namespace librealsense
             virtual const rs_usb_interface get_interface(uint8_t interface_number) const override;
             virtual const rs_usb_messenger open(uint8_t interface_number) override;
             virtual const std::vector<usb_descriptor> get_descriptors() const override { return _descriptors; }
+            virtual const rs_usb_interface get_interface_isoc(uint8_t interface_number  , uint16_t maxpacketsize) const override;
 
         private:
             usb_device_info _info;

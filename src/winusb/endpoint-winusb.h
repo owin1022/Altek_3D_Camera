@@ -26,7 +26,8 @@ namespace librealsense
                 return _address >= RS2_USB_ENDPOINT_DIRECTION_READ ?
                     RS2_USB_ENDPOINT_DIRECTION_READ : RS2_USB_ENDPOINT_DIRECTION_WRITE;
             }
-
+            virtual uint16_t get_maxpacketsize() const override {                
+                    return 1024; }
             virtual uint8_t get_interface_number() const override { return _interface_number; }
 
         private:

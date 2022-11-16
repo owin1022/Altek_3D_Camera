@@ -17,24 +17,46 @@ public class UsbUtilities {
     private static final String TAG = "librs UsbUtilities";
     public static final String ACTION_USB_PERMISSION = "USB_CONTROL_PERMISSION";
 
+    private static final Boolean isUseRobotEye = true;
+
     public static boolean isIntel(UsbDevice usbDevice){
-        if (usbDevice.getVendorId() == 0x8086)
+		//abt
+        if (usbDevice.getVendorId() == 0x8086 || usbDevice.getVendorId() == 0x143C || usbDevice.getVendorId() == 0x05a6)
             return true;
+
         return false;
     }
 
     private static List<UsbDevice> getUsbDevices(Context context, Integer vId) {
-        return getUsbDevices(context, vId, 0);
+        //abt
+        List<UsbDevice> res;
+        if (vId == 0x143c) {
+            res = getUsbDevices(context, vId, 0x99AA);
+            if(res.isEmpty())
+                res = getUsbDevices(context, vId, 0x99BB);
+        }
+        else
+            res =  getUsbDevices(context, vId, 0);
+
+        if(res.isEmpty())
+            Log.w("abt", "getUsbDevices: not found");
+
+        return res;
     }
 
     private static List<UsbDevice> getUsbDevices(Context context, Integer vId, Integer pId) {
         ArrayList<UsbDevice> res = new ArrayList<>();
         UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
 
+        Log.w("abt", "get usb devices PID: 0x"+Integer.toHexString(pId)+", VID: 0x"+Integer.toHexString(vId));
+
         HashMap<String, UsbDevice> devicesMap = usbManager.getDeviceList();
         for (Map.Entry<String, UsbDevice> entry : devicesMap.entrySet()) {
             UsbDevice usbDevice = entry.getValue();
-            if (usbDevice.getVendorId() == vId && (usbDevice.getProductId() == pId || pId == 0)) {
+            Log.d(TAG, "usbDevice.getProductId() = 0x"+ Integer.toHexString(usbDevice.getProductId()));
+            Log.d(TAG, "usbDevice.getVendorId() = 0x"+ Integer.toHexString(usbDevice.getVendorId()));
+            if(usbDevice.getVendorId() == vId && (usbDevice.getProductId() == pId || pId == 0))
+            {
                 res.add(usbDevice);
             }
         }
@@ -74,7 +96,15 @@ public class UsbUtilities {
     }
 
     private static List<UsbDevice> getDevices(Context context) {
-        return getUsbDevices(context, 0x8086);
+        //abt
+        List<UsbDevice> res = getUsbDevices(context, 0x143C);
+        if (res.isEmpty())
+            res = getUsbDevices(context, 0x05a6);
+        if (res.isEmpty())
+            res = getUsbDevices(context, 0x8086);
+        if(res.isEmpty())
+            Log.w("abt", "getDevices: not found");
+        return res;
     }
 
     public static void grantUsbPermissionIfNeeded(Context context) {

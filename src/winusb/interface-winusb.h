@@ -27,7 +27,7 @@ namespace librealsense
             virtual const std::vector<std::shared_ptr<usb_endpoint>> get_endpoints() const override { return _endpoints; }
             
             virtual const rs_usb_endpoint first_endpoint(const endpoint_direction direction, const endpoint_type type = RS2_USB_ENDPOINT_BULK) const override;
-
+            virtual uint8_t get_alternate_setting() const override { return 1; }
             const std::wstring get_device_path() { return _device_path; }
         private:
             std::wstring _device_path;

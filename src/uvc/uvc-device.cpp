@@ -3,6 +3,15 @@
 
 #include "uvc-device.h"
 
+#define USE_LIBLOG
+#ifdef USE_LIBLOG
+#undef LOG_TAG
+#define LOG_TAG "uvcstream"
+#include "android/log.h"
+//#define DD ALOGD
+#define DD(...) __android_log_print(ANDROID_LOG_DEBUG, "uvcstream", __VA_ARGS__)
+#endif
+
 #define UVC_AE_MODE_D0_MANUAL   ( 1 << 0 )
 #define UVC_AE_MODE_D1_AUTO     ( 1 << 1 )
 #define UVC_AE_MODE_D2_SP       ( 1 << 2 )
@@ -13,6 +22,7 @@
 const int CONTROL_TRANSFER_TIMEOUT = 100;
 const int INTERRUPT_BUFFER_SIZE = 1024;
 const int FIRST_FRAME_MILLISECONDS_TIMEOUT = 2000;
+const int DEVICE_USB_REQUEST_COUNT	 =	2;
 
 class lock_singleton
 {
@@ -41,8 +51,13 @@ namespace librealsense
         {
             std::vector<platform::uvc_device_info> rv;
             auto usb_devices = platform::usb_enumerator::query_devices_info();
+
+            LOG_INFO("query_uvc_devices_info start");
             for (auto&& info : usb_devices) 
             {
+                LOG_INFO("info.cls = " << info.cls << ", RS2_USB_CLASS_VIDEO = "
+                    << RS2_USB_CLASS_VIDEO);
+
                 if (info.cls != RS2_USB_CLASS_VIDEO)
                     continue;
                 platform::uvc_device_info device_info;
@@ -53,7 +68,7 @@ namespace librealsense
                 device_info.unique_id = info.unique_id;
                 device_info.device_path = info.id;
                 device_info.conn_spec = info.conn_spec;
-                //LOG_INFO("Found UVC device: " << std::string(device_info).c_str());
+                LOG_INFO("Found UVC device: " << std::string(device_info).c_str());
                 rv.push_back(device_info);
             }
             return rv;
@@ -68,8 +83,10 @@ namespace librealsense
                     continue;
 
                 auto dev = usb_enumerator::create_usb_device(usb_info);
-                if(dev)
-                    return std::make_shared<rs_uvc_device>(dev, info);
+                if(dev) {
+                    LOG_INFO("------Create  request" << " oid= "<< std::hex << dev->get_info().pid  << " mi= " << (int) dev->get_info().mi << " unique_id= " << dev->get_info().unique_id );
+                    return std::make_shared<rs_uvc_device>(dev, info, DEVICE_USB_REQUEST_COUNT);
+                }
             }
 
             return nullptr;
@@ -81,6 +98,7 @@ namespace librealsense
                 _action_dispatcher(10),
                 _usb_request_count(usb_request_count)
         {
+            LOG_DEBUG("----rs_uvc_device-_usb_request_count  " << (int)_usb_request_count << " "  <<  (int)usb_request_count);
             _parser = std::make_shared<uvc_parser>(usb_device, info);
             _action_dispatcher.start();
         }
@@ -150,18 +168,22 @@ namespace librealsense
 
             for(auto&& s : _streamers)
                 s->stop();
-
+LOG_DEBUG(" " << __FUNCTION__ << " " << __LINE__);
             auto elem = std::find_if(_streams.begin(), _streams.end(), [&](const profile_and_callback &pac) {
                 return (pac.profile == profile && (pac.callback));
             });
+            LOG_DEBUG(" " << __FUNCTION__ << " " << __LINE__);
 
             if (elem == _streams.end() && _frame_callbacks.empty())
                 throw std::runtime_error("Camera is not streaming!");
+            LOG_DEBUG(" " << __FUNCTION__ << " " << __LINE__);
 
             stop_stream_cleanup(profile, elem);
 
             if (!_profiles.empty())
                 _streamers.clear();
+            LOG_DEBUG(" " << __FUNCTION__ << " " << __LINE__);
+
         }
 
         void rs_uvc_device::set_power_state(power_state state)
@@ -451,8 +473,11 @@ namespace librealsense
             if(sts != RS2_USB_STATUS_SUCCESS)
                 throw std::runtime_error("Failed to start streaming!");
 
+            //check num of iso desc request for iso mode
+
             uvc_streamer_context usc = { profile, callback, ctrl, _usb_device, _messenger, _usb_request_count };
 
+            LOG_DEBUG("-----_usb_request_count=  " <<  (int)_usb_request_count);
             auto streamer = std::make_shared<uvc_streamer>(usc);
             _streamers.push_back(streamer);
 
@@ -486,12 +511,18 @@ namespace librealsense
             unsigned char buffer[4] = {0};
             int32_t ret = 0;
             
+            LOG_DEBUG("abt length: " << (length));
             usb_status sts;
             uint32_t transferred;
             _action_dispatcher.invoke_and_wait([&, this](dispatcher::cancellable_timer c)
             {
                 if (_messenger)
                 {
+              //      LOG_DEBUG("abt control: " << (control));
+              //      LOG_DEBUG("abt control << 8: " << (control << 8));
+              //      LOG_DEBUG("abt _info.mi: " << _info.mi);
+              //      LOG_DEBUG("abt unit << 8 | (_info.mi): " << (unit << 8 | (_info.mi)) );
+               //     LOG_DEBUG("abt unit: " << unit);
                     sts = _messenger->control_transfer(
                             UVC_REQ_TYPE_GET,
                             action,
@@ -501,6 +532,8 @@ namespace librealsense
                             sizeof(int32_t),
                             transferred,
                             0);
+                //    LOG_DEBUG("abt sts: " << sts);
+
                 }
 
             }, [this](){ return !_messenger; });
@@ -508,8 +541,14 @@ namespace librealsense
             if (sts != RS2_USB_STATUS_SUCCESS)
                 throw std::runtime_error("get_data_usb failed, error: " + usb_status_to_string.at(sts));
 
-            if (transferred != sizeof(int32_t)) 
-                throw std::runtime_error("insufficient data read from USB");
+        //    LOG_DEBUG("abt transferred: " << transferred);
+        //    LOG_DEBUG("abt sizeof(int32_t): " << sizeof(int32_t));
+
+            if (transferred != sizeof(int32_t))
+            {
+                LOG_DEBUG("insufficient data read from US ");
+                //throw std::runtime_error("insufficient data read from USB");
+            }
 
             // Converting byte array buffer (with length 8/16/32) to int32
             switch (length) {
@@ -692,8 +731,9 @@ namespace librealsense
             if(_interrupt_request)
             {
                 _interrupt_callback->cancel();
-                _messenger->cancel_request(_interrupt_request);
-                _interrupt_request.reset();
+           //     LOG_DEBUG("interrupt_cancel_request");
+           //     _messenger->cancel_request(_interrupt_request); //randy debug need remvove
+           //    _interrupt_request.reset(); //randy debug need remvove
             }
         }
 
@@ -896,6 +936,29 @@ namespace librealsense
                 }
                 else
                     ctrl->dwClockFrequency = _parser->get_clock_frequency();
+            }
+
+          //  if (probe ==0)
+            {
+                if (probe)
+                    LOG_DEBUG("---------------prone " << (uint16_t) probe);
+                else
+                    LOG_DEBUG("--------------commit " << (uint16_t) probe);
+                if (req == UVC_SET_CUR)  LOG_DEBUG(" UVC_SET_CUR");
+                else if (req == UVC_GET_CUR)  LOG_DEBUG(" UVC_GET_CUR");
+                else if (req == UVC_GET_MIN)  LOG_DEBUG(" UVC_GET_MIN");
+                else if (req == UVC_GET_MAX) LOG_DEBUG("UVC_GET_MAX ");
+                else if (req == UVC_GET_RES) LOG_DEBUG("UVC_GET_RES ");
+                else if (req == UVC_GET_LEN) LOG_DEBUG("UVC_GET_LEN ");
+                else if (req == UVC_GET_INFO) LOG_DEBUG(" UVC_GET_INFO");
+                else if (req == UVC_GET_DEF) LOG_DEBUG(" UVC_GET_DEF");
+                LOG_DEBUG(" req " <<std::hex << req);
+                LOG_DEBUG(" bInterfaceNumber =" << (uint16_t) ctrl->bInterfaceNumber);
+                LOG_DEBUG(" bFormatIndex =" << (uint16_t) ctrl->bFormatIndex);
+                LOG_DEBUG(" bFrameIndex =" << (uint16_t) ctrl->bFrameIndex);
+                LOG_DEBUG("  dwFrameInterval: " << ctrl->dwFrameInterval);
+                LOG_DEBUG("  dwMaxVideoFrameSize : " << ctrl->dwMaxVideoFrameSize);
+                LOG_DEBUG("  dwMaxPayloadTransferSize = " << ctrl->dwMaxPayloadTransferSize);
             }
             return RS2_USB_STATUS_SUCCESS;
         }

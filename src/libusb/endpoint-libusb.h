@@ -21,7 +21,8 @@ namespace librealsense
             virtual uint8_t get_address() const override { return _desc.bEndpointAddress; }
             virtual endpoint_type get_type() const override { return (endpoint_type)_desc.bmAttributes; }
             virtual uint8_t get_interface_number() const override { return _interface_number; }
-
+            virtual uint16_t get_maxpacketsize() const override {                
+                    return 1024; }
             virtual endpoint_direction get_direction() const override
             {
                 return _desc.bEndpointAddress >= RS2_USB_ENDPOINT_DIRECTION_READ ?

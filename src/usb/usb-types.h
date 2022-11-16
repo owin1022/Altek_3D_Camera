@@ -71,10 +71,10 @@ namespace librealsense
 
         typedef enum _endpoint_type
         {
-            RS2_USB_ENDPOINT_CONTROL,
-            RS2_USB_ENDPOINT_ISOCHRONOUS,
-            RS2_USB_ENDPOINT_BULK,
-            RS2_USB_ENDPOINT_INTERRUPT
+            RS2_USB_ENDPOINT_CONTROL = 0x00,
+            RS2_USB_ENDPOINT_ISOCHRONOUS = 0x05,
+            RS2_USB_ENDPOINT_BULK = 0x02,
+            RS2_USB_ENDPOINT_INTERRUPT = 0x03
         } endpoint_type;
 
         //https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/supported-usb-classes#microsoft-provided-usb-device-class-drivers

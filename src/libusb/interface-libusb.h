@@ -26,7 +26,7 @@ namespace librealsense
             virtual const std::vector<rs_usb_endpoint> get_endpoints() const override { return _endpoints; }
             virtual const rs_usb_endpoint first_endpoint(const endpoint_direction direction, const endpoint_type type = RS2_USB_ENDPOINT_BULK) const override;
             virtual const std::vector<rs_usb_interface> get_associated_interfaces() const { return _associated_interfaces; }
-
+     virtual uint8_t get_alternate_setting() const override { return 1; }
             void add_associated_interface(const rs_usb_interface& interface);
 
         private:

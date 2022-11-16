@@ -102,6 +102,8 @@ namespace librealsense
             rs_usb_messenger                        _messenger;
             rs_usb_request                          _interrupt_request;
             rs_usb_request_callback                 _interrupt_callback;
+   //         rs_usb_request                          _isochronous_request;
+   //         rs_usb_request_callback                 _isochronous_callback;
             uint8_t                                 _usb_request_count;
 
             mutable dispatcher                      _action_dispatcher;

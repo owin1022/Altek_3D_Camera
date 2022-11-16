@@ -18,6 +18,8 @@ namespace librealsense
         usb_interface_usbhost::usb_interface_usbhost(::usb_interface_descriptor desc, ::usb_descriptor_iter it) :
                 _desc(desc)
         {
+
+  //          LOG_DEBUG("desc.bNumEndpoints = "  << desc.bNumEndpoints);
             for (int e = 0; e < desc.bNumEndpoints;) {
                 usb_descriptor_header *h = usb_descriptor_iter_next(&it);
                 if(h == NULL)
@@ -25,10 +27,26 @@ namespace librealsense
                 if (h->bDescriptorType == (USB_DT_ENDPOINT & ~USB_TYPE_MASK)) {
                     e++;
                     auto epd = *((usb_endpoint_descriptor *) h);
-                    auto ep = std::make_shared<usb_endpoint_usbhost>(epd, desc.bInterfaceNumber);
+                    auto bkit = &it;
+                    usb_descriptor_header *ssh = nullptr;
+                    if (bkit != nullptr)
+                        ssh = usb_descriptor_iter_next(bkit);
+                    if (ssh != nullptr && ssh->bDescriptorType == USB_DT_SS_ENDPOINT_COMP)
+                    {
+                        auto ssepd = *((usb_ss_ep_comp_descriptor *) ssh);
+                        auto ep = std::make_shared<usb_endpoint_usbhost>(epd,
+                                                                         desc.bInterfaceNumber, ssepd);
+                        _endpoints.push_back(ep);
+                    }
+                    else {
+                        auto ep = std::make_shared<usb_endpoint_usbhost>(epd,
+                                                                         desc.bInterfaceNumber);
                     _endpoints.push_back(ep);
                 }
             }
+
+            }
+    //        LOG_DEBUG("endpoint size = "  << _endpoints.size());
         }
 
         usb_interface_usbhost::~usb_interface_usbhost()

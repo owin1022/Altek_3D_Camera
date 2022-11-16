@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
     <usb-device vendor-id="0x08086" />
     <usb-device vendor-id="0x08087" />
     <usb-device vendor-id="0x003E7" />
+    <usb-device vendor-id="0x0143C" />
+    <usb-device vendor-id="0x005a6" />
+    -->
+    <!-- UVC Video control interface-->
+    <usb-device class="14" subclass="1" />
+    <!-- UVC Video stream interface-->
+    <usb-device class="14" subclass="2" />
+    <usb-device vendor-id="0x08086" />
+    <usb-device vendor-id="0x08087" />
+    <usb-device vendor-id="0x003E7" />
+    <usb-device vendor-id="0x005A6" />
+    <usb-device vendor-id="0x0143C" />
+    <!-- al3d-->
+    <usb-device vendor-id="5180" product-id="39338" />
+    <usb-device vendor-id="5180" product-id="39355" />
+
 </resources>

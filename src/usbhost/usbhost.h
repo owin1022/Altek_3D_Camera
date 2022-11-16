@@ -245,12 +245,21 @@ int usb_device_bulk_transfer(struct usb_device *device,
                              unsigned int length,
                              unsigned int timeout);
 
+/* Reads or writes on a iso endpoint.
+ * Returns number of bytes transferred, or negative value for error.
+ */
+int usb_device_isoc_transfer(struct usb_device *device,
+                             int endpoint,
+                             void* buffer,
+                             unsigned int length,
+                             unsigned int timeout);
+
 /** Reset USB bus for the device */
 int usb_device_reset(struct usb_device *device);
 
 /* Creates a new usb_request. */
 struct usb_request *usb_request_new(struct usb_device *dev,
-                                    const struct usb_endpoint_descriptor *ep_desc);
+                                    const struct usb_endpoint_descriptor *ep_desc , const struct  usb_ss_ep_comp_descriptor  *ep_ssdesc);
 
 /* Releases all resources associated with the request */
 void usb_request_free(struct usb_request *req);

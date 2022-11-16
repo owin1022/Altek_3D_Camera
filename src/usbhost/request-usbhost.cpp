@@ -5,17 +5,36 @@
 #include "endpoint-usbhost.h"
 #include "device-usbhost.h"
 
+//#define USE_LIBLOG
+
+#ifdef USE_LIBLOG
+#define LOG_TAG "uvcstream"
+#include "android/log.h"
+//#define DD ALOGD
+#define DD(...) __android_log_print(ANDROID_LOG_DEBUG, "uvcstream", __VA_ARGS__)
+#else
+#define DD(...) {}
+#endif
+
 namespace librealsense
 {
     namespace platform
     {
-        usb_request_usbhost::usb_request_usbhost(rs_usb_device device, rs_usb_endpoint endpoint)
+        usb_request_usbhost::usb_request_usbhost(rs_usb_device device, rs_usb_endpoint endpoint )
         {
             _endpoint = endpoint;
             auto dev = std::static_pointer_cast<usb_device_usbhost>(device);
             auto read_ep = std::static_pointer_cast<usb_endpoint_usbhost>(_endpoint);
             auto desc = read_ep->get_descriptor();
-            _native_request = std::shared_ptr<::usb_request>(usb_request_new(dev->get_handle(), &desc),
+            auto ssdesc = read_ep->get_ss_descriptor();
+            /*
+            if ((desc.bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_ISOC) {
+                LOG_DEBUG("endpoint addr =" << std::hex << (uint16_t) desc.bEndpointAddress << std::dec
+                                            << " type = " << (uint16_t) _endpoint->get_type() << std::dec
+                                            << " dir = " << (uint16_t) _endpoint->get_direction() << "max packget ="
+                                            << std::dec << (uint16_t) desc.wMaxPacketSize);
+            } */
+            _native_request = std::shared_ptr<::usb_request>(usb_request_new(dev->get_handle(), &desc , &ssdesc),
              [this](::usb_request* req)
              {
                  if(!_active)
@@ -28,6 +47,7 @@ namespace librealsense
 
         usb_request_usbhost::~usb_request_usbhost()
         {
+            DD("----- ~usb_request_usbhost _active = %d  @%p" , (int)_active , _native_request.get()->private_data);
             if(_active)
                 usb_request_cancel(_native_request.get());
 

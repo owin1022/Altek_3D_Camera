@@ -45,6 +45,7 @@ namespace librealsense
 
         private:
             std::mutex _running_mutex;
+            std::mutex _iso_mutex;
             std::condition_variable _stopped_cv;
             bool _running = false;
             bool _frame_arrived = false;
@@ -52,6 +53,13 @@ namespace librealsense
 
             int64_t _watchdog_timeout;
             uvc_streamer_context _context;
+            int64_t  _urb_process_count;
+            uint32_t _gframe_count;
+            uint8_t _gfid;
+            uint32_t _ggot_bytes;
+            backend_frame *_gptr;
+            backend_frame *_greusedptr;
+            bool _queueadded = true;
 
             dispatcher _action_dispatcher;
 

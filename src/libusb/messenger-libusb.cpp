@@ -107,5 +107,10 @@ namespace librealsense
             }
             return RS2_USB_STATUS_SUCCESS;
         }
+
+        usb_status usb_messenger_libusb::set_interface(unsigned int interface , unsigned int alt_setting)
+        {      
+            return RS2_USB_STATUS_SUCCESS;
+        }
     }
 }

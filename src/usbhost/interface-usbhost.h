@@ -23,6 +23,7 @@ namespace librealsense
             virtual uint8_t get_number() const override { return _desc.bInterfaceNumber; }
             virtual uint8_t get_class() const override { return _desc.bInterfaceClass; }
             virtual uint8_t get_subclass() const override { return _desc.bInterfaceSubClass; }
+            virtual uint8_t get_alternate_setting() const override { return _desc.bAlternateSetting; }
             virtual const std::vector<rs_usb_endpoint> get_endpoints() const override { return _endpoints; }
             virtual const std::vector<rs_usb_interface> get_associated_interfaces() const { return _associated_interfaces; }
 

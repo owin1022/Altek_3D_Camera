@@ -22,6 +22,7 @@ namespace librealsense
             virtual const usb_device_info get_info() const = 0;
             virtual const std::vector<rs_usb_interface> get_interfaces() const = 0;
             virtual const rs_usb_interface get_interface(uint8_t interface_number) const = 0;
+            virtual const rs_usb_interface get_interface_isoc(uint8_t interface_number  , uint16_t maxpacketsize) const = 0;
             virtual const rs_usb_messenger open(uint8_t interface_number) = 0;
             virtual const std::vector<usb_descriptor> get_descriptors() const = 0;
         };

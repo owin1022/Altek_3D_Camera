@@ -98,7 +98,7 @@ namespace librealsense
                     if(e->get_direction() != RS2_USB_ENDPOINT_DIRECTION_READ)
                         continue;
                     auto type = e->get_type();
-                    if(type == RS2_USB_ENDPOINT_INTERRUPT || type == RS2_USB_ENDPOINT_BULK)
+                    if(type == RS2_USB_ENDPOINT_INTERRUPT || type == RS2_USB_ENDPOINT_BULK || type == RS2_USB_ENDPOINT_ISOCHRONOUS)
                     {
                         _dispatchers[e->get_address()] = std::make_shared<dispatcher>(10);
                         auto d = _dispatchers.at(e->get_address());
@@ -126,11 +126,32 @@ namespace librealsense
 
         const rs_usb_interface usb_device_usbhost::get_interface(uint8_t interface_number) const
         {
+
             auto it = std::find_if(_interfaces.begin(), _interfaces.end(),
-                                   [interface_number](const rs_usb_interface& i) { return interface_number == i->get_number(); });
+                                   [interface_number](const rs_usb_interface& i){
+                                      return interface_number == i->get_number();});
+
             if (it == _interfaces.end())
                 return nullptr;
             return *it;
+        }
+
+        const rs_usb_interface usb_device_usbhost::get_interface_isoc(uint8_t interface_number , uint16_t maxpacketsize) const
+        {
+
+            for(auto&& i : get_interfaces()) {
+                for (auto &&e: i->get_endpoints()) {
+                    if (e->get_direction() != RS2_USB_ENDPOINT_DIRECTION_READ)
+                        continue;
+                    auto type = e->get_type();
+           //         LOG_DEBUG("alt = "  <<  (uint16_t)  i->get_alternate_setting() << " endpoint type = " << (uint16_t) type  << " get_maxpacketsize  " << e->get_maxpacketsize());
+                    if (type == RS2_USB_ENDPOINT_ISOCHRONOUS && interface_number == i->get_number() ) {
+                        if (maxpacketsize == e->get_maxpacketsize())
+                            return i;
+                    }
+                }
+            }
+            return nullptr;
         }
 
         const std::shared_ptr<usb_messenger> usb_device_usbhost::open(uint8_t interface_number)
@@ -158,8 +179,9 @@ namespace librealsense
             {
                 req->set_active(false);
                 std::string strerr = strerror(errno);
-                LOG_WARNING("usb_request_queue returned error, endpoint: " << (int)request->get_endpoint()->get_address() << " error: " << strerr << ", number: " << (int)errno);
+                LOG_WARNING("usb_request_queue returned error, endpoint:0x " <<std::hex << (int)request->get_endpoint()->get_address() << " error: " << strerr << ", number: " << (int)errno);
                 return usbhost_status_to_rs(errno);
+             //   return RS2_USB_STATUS_SUCCESS;
             }
             invoke();
             return RS2_USB_STATUS_SUCCESS;
@@ -173,9 +195,13 @@ namespace librealsense
             if(sts < 0)
             {
                 std::string strerr = strerror(errno);
-                LOG_WARNING("usb_request_cancel returned error, endpoint: " << (int)request->get_endpoint()->get_address() << ", error: " << strerr << ", number: " << (int)errno);
+                LOG_WARNING("usb_request_cancel returned error, endpoint: " << std::hex << (int)request->get_endpoint()->get_address() << ", error: " << strerr << ", number: " << (int)errno);
                 return usbhost_status_to_rs(errno);
+                //return RS2_USB_STATUS_SUCCESS;
             }
+            else
+                LOG_DEBUG("usb_request_cancel succ ");
+
             return RS2_USB_STATUS_SUCCESS;
         }
 

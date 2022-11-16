@@ -244,6 +244,16 @@ enum uvc_vs_ctrl_selector {
     UVC_VS_SYNC_DELAY_CONTROL = 0x09
 };
 
+/** Payload header flags (2.4.3.3) */
+#define UVC_STREAM_EOH (1 << 7)
+#define UVC_STREAM_ERR (1 << 6)
+#define UVC_STREAM_STI (1 << 5)
+#define UVC_STREAM_RES (1 << 4)
+#define UVC_STREAM_SCR (1 << 3)
+#define UVC_STREAM_PTS (1 << 2)
+#define UVC_STREAM_EOF (1 << 1)
+#define UVC_STREAM_FID (1 << 0)
+
 typedef struct uvc_device_descriptor {
     /** Vendor ID */
     uint16_t idVendor;

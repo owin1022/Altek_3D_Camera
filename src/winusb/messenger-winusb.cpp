@@ -172,6 +172,15 @@ namespace librealsense
             return winusb_status_to_rs(sts);
         }
 
+        usb_status usb_messenger_winusb::set_interface(unsigned int inf , unsigned int alt_setting)
+        {
+                return RS2_USB_STATUS_SUCCESS;
+        }
+
+        usb_status usb_messenger_winusb::isoc_transfer(const std::shared_ptr<usb_endpoint>&  endpoint, uint8_t* buffer, uint32_t length, uint32_t& transferred, uint32_t timeout_ms)
+        {
+            return RS2_USB_STATUS_SUCCESS;
+        }
         std::shared_ptr<dispatcher> usb_messenger_winusb::get_dispatcher(uint8_t endpoint)
         {
             std::lock_guard<std::mutex> lk(_mutex);
