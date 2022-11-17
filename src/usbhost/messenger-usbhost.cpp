@@ -80,11 +80,6 @@ namespace librealsense
             return RS2_USB_STATUS_SUCCESS;
         }
 
-        usb_status usb_messenger_usbhost::isoc_transfer(const std::shared_ptr<usb_endpoint>&  endpoint, uint8_t* buffer, uint32_t length, uint32_t& transferred, uint32_t timeout_ms)
-        {
-
-            return RS2_USB_STATUS_SUCCESS;
-        }
 
         rs_usb_request usb_messenger_usbhost::create_request(rs_usb_endpoint endpoint)
         {

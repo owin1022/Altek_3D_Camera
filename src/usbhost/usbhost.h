@@ -245,15 +245,6 @@ int usb_device_bulk_transfer(struct usb_device *device,
                              unsigned int length,
                              unsigned int timeout);
 
-/* Reads or writes on a iso endpoint.
- * Returns number of bytes transferred, or negative value for error.
- */
-int usb_device_isoc_transfer(struct usb_device *device,
-                             int endpoint,
-                             void* buffer,
-                             unsigned int length,
-                             unsigned int timeout);
-
 /** Reset USB bus for the device */
 int usb_device_reset(struct usb_device *device);
 

@@ -699,15 +699,6 @@ int usb_device_bulk_transfer(struct usb_device *device,
     return ioctl(device->fd, USBDEVFS_BULK, &ctrl);
 }
 
-int usb_device_isoc_transfer(struct usb_device *device,
-                             int endpoint,
-                             void* buffer,
-                             unsigned int length,
-                             unsigned int timeout)
-{
-    return 0;
-}
-
 int usb_device_reset(struct usb_device *device)
 {
     DD("usb_device_reset %s" , device->dev_name);
