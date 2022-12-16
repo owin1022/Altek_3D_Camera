@@ -1037,7 +1037,7 @@ namespace librealsense
             []() {return std::make_shared<y12i_to_y16y16>(); }
         );
 		
-		if (_pid == ds::AL3Di_PID)//al3di
+		if ((_pid == ds::AL3D_PID)||(_pid == ds::AL3Di_PID))//al3d
 		{
 			depth_sensor.register_processing_block(
 				{ { RS2_FORMAT_AL24 } },

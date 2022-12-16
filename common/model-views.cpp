@@ -6780,7 +6780,7 @@ namespace rs2
                         auto is_comb_supported = sub->is_selected_combination_supported();
                         bool can_stream = false;
 
-						if (pid == "99BB")
+						if ((pid == "99AA")||(pid == "99BB"))
 						{
 							if(al3di_is_rgb_streaming)
 							{
@@ -6830,7 +6830,7 @@ namespace rs2
                                 }
                             }
                         }
-						if (pid == "99BB")
+						if ((pid == "99AA")||(pid == "99BB"))
 						{
 							if(al3di_disable_rgb == true)
 							{
@@ -6870,7 +6870,7 @@ namespace rs2
                                     _update_readonly_options_timer.set_expired();
                                     sub->play(profiles, viewer, dev_syncer);
 
-									if (pid == "99BB")
+									if ((pid == "99AA")||(pid == "99BB"))
 									{	
 										if(profiles[0].stream_type() == RS2_STREAM_COLOR)
 										{
@@ -6924,7 +6924,7 @@ namespace rs2
                             {
                                 viewer.synchronization_enable = viewer.synchronization_enable_prev_state.load();
                             }
-							if (pid == "99BB")
+							if ((pid == "99AA")||(pid == "99BB"))
 							{
 								if (friendly_name == "Stereo Module")
 								{
