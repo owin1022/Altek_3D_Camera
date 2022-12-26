@@ -28,23 +28,23 @@ namespace librealsense
 	//Density Check Threshold: value[0-1], means 0%~100%
 	const float alpha_min_val = 0.00f;
 	const float alpha_max_val = 1.00f;
-	const float alpha_default_val = 0.50f;
+	const float alpha_default_val = 0.25f;
 	const float alpha_step = 0.01f;
-	// Mean Difference Check Threshold: value[0-max value], disparity level
+	//Mean Difference Check Threshold: value[0-max value], disparity level
 	const float delta_min_val = 0.0f;
 	const float delta_max_val = _ALTEK_SF_DELTA_MAX_*1.0f;
-	const float delta_default_val = 0.25f;
-	const float delta_step = 0.01f;
-	//Density Check iterations: value[0-5], run 0-5 times
-	const uint8_t filter_iter_min = 0;
-	const uint8_t filter_iter_max = 5;
-	const uint8_t filter_iter_def = 2;
-	const uint8_t filter_iter_step = 1;
-	//Mask Size: value[0-4], mask size 3x3 ~ 9x9
+	const float delta_default_val = 0.38f;
+	const float delta_step = 0.01f; //0.01f;
+	//Depth Smooth Ratio [0-1], [smooth low - smooth high]
+	const float filter_iter_min = 0.0f;
+	const float filter_iter_max = 1.0f;
+	const float filter_iter_def = 0.85f;
+	const float filter_iter_step = 0.01f;
+	//Mask Size: value[0-5], mask size 5x5-7x7 + 7x7-13x13
 	const uint8_t holes_fill_min = 0;
-	const uint8_t holes_fill_max = 4;
+	const uint8_t holes_fill_max = 5;
 	const uint8_t holes_fill_step = 1;
-	const uint8_t holes_fill_def = 2;
+	const uint8_t holes_fill_def = 4;
 #else
 	// The weight of the current pixel for smoothing is bounded within [25..100]%
 	const float alpha_min_val = 0.25f;
@@ -111,10 +111,11 @@ namespace librealsense
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 
-			//if (!spatial_filter_delta->is_valid(val))
-			//	throw invalid_value_exception(to_string()
-			//		<< "Unsupported spatial distance threshold: " << val << " is out of range.");
-
+			/*
+			if (!spatial_filter_delta->is_valid(val))
+				throw invalid_value_exception(to_string()
+					<< "Unsupported spatial distance threshold: " << val << " is out of range.");
+			*/
 			_spatial_delta_param = static_cast<float>(val);
 			_spatial_edge_threshold = float(_spatial_delta_param);
 			_spatial_delta_LUT_value_init_flag = 0;
@@ -126,18 +127,19 @@ namespace librealsense
 			holes_fill_step,
 			holes_fill_def,
 			&_holes_filling_mode, "Filter Size");
-		holes_filling_mode->set_description(sp_hf_disabled, "3x3");
-		holes_filling_mode->set_description(sp_hf_2_pixel_radius, "5x5");
-		holes_filling_mode->set_description(sp_hf_4_pixel_radius, "7x7");
-		holes_filling_mode->set_description(sp_hf_8_pixel_radius, "9x7");
-		holes_filling_mode->set_description(sp_hf_16_pixel_radius, "9x9");
+		holes_filling_mode->set_description(sp_hf_disabled, "less + normal ");
+		holes_filling_mode->set_description(sp_hf_2_pixel_radius, "less + high ");
+		holes_filling_mode->set_description(sp_hf_4_pixel_radius, "normal + lower ");
+		holes_filling_mode->set_description(sp_hf_8_pixel_radius, "normal + low ");
+		holes_filling_mode->set_description(sp_hf_16_pixel_radius, "normal + normal ");
+		holes_filling_mode->set_description(sp_hf_unlimited_radius, "normal + high ");
 
-		auto spatial_filter_iterations = std::make_shared<ptr_option<uint8_t>>(
+		auto spatial_filter_iterations = std::make_shared<ptr_option<float>>(
 			filter_iter_min,
 			filter_iter_max,
 			filter_iter_step,
 			filter_iter_def,
-			&_spatial_iterations, "Density Check iterations");
+			&_spatial_iterations, "Depth Smooth Ratio");
 
 		register_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, spatial_filter_alpha);
 		register_option(RS2_OPTION_FILTER_SMOOTH_DELTA, spatial_filter_delta);
@@ -247,16 +249,22 @@ namespace librealsense
     rs2::frame spatial_filter::process_frame(const rs2::frame_source& source, const rs2::frame& f)
     {
         rs2::frame tgt;
-
+		
         update_configuration(f);
         tgt = prepare_target_frame(f, source);
 
         // Spatial domain transform edge-preserving filter
-        if (_extension_type == RS2_EXTENSION_DISPARITY_FRAME)
-            dxf_smooth<float>(const_cast<void*>(tgt.get_data()), _spatial_alpha_param, _spatial_edge_threshold, _spatial_iterations);
-        else
-            dxf_smooth<uint16_t>(const_cast<void*>(tgt.get_data()), _spatial_alpha_param, _spatial_edge_threshold, _spatial_iterations);
-
+#if _ALTEK_SF_
+		if (_extension_type == RS2_EXTENSION_DEPTH_FRAME)
+		{
+			dxf_smooth<uint16_t>(const_cast<void*>(tgt.get_data()), _spatial_alpha_param, _spatial_edge_threshold, _spatial_iterations);
+		}
+#else
+		if (_extension_type == RS2_EXTENSION_DISPARITY_FRAME)
+			dxf_smooth<float>(const_cast<void*>(tgt.get_data()), _spatial_alpha_param, _spatial_edge_threshold, _spatial_iterations);
+		else
+			dxf_smooth<uint16_t>(const_cast<void*>(tgt.get_data()), _spatial_alpha_param, _spatial_edge_threshold, _spatial_iterations);
+#endif
         return tgt;
     }
 
@@ -329,18 +337,19 @@ namespace librealsense
 		//------ integral image remalloc --------------------------------
 		if (_spatial_integralimage_size_pixels != _current_frm_size_pixels  || _spatial_integralimage_mask_mode!= _holes_filling_mode)
 		{
-			int mask_w_h = 4, mask_h_h = 3;
+			int mask_half = 5;
 			switch (_holes_filling_mode)
 			{
-				case 0:			mask_w_h = 1, mask_h_h = 1;		break;
-				case 1:			mask_w_h = 2, mask_h_h = 2;		break;
-				case 2:			mask_w_h = 3, mask_h_h = 3;		break;
-				case 3:			mask_w_h = 4, mask_h_h = 3;		break;
-				case 4:			mask_w_h = 4, mask_h_h = 4;		break;
-				default:			mask_w_h = 2, mask_h_h = 2;		break;
+				case 0:			mask_half = 4;		break;
+				case 1:			mask_half = 5;		break;
+				case 2:			mask_half = 4;		break;
+				case 3:			mask_half = 5;		break;
+				case 4:			mask_half = 6;		break;
+				case 5:			mask_half = 7;		break;
+				default:			mask_half = 5;		break;
 			}
-			int width2 = static_cast<int>(_width) + mask_w_h * 2 + 1;
-			int height2 = static_cast<int>(_height) + mask_h_h * 2 + 1;
+			int width2 = static_cast<int>(_width) + mask_half * 2 + 1;
+			int height2 = static_cast<int>(_height) + mask_half * 2 + 1;
 
 			if (_spatial_integralimage_buffer_init_flag == 1)
 			{
@@ -370,7 +379,6 @@ namespace librealsense
     void spatial_filter::recursive_filter_horizontal_fp(void * image_data, float alpha, float deltaZ)
     {
         float *image = reinterpret_cast<float*>(image_data);
-
         int v, u;
 
         for (v = 0; v < _height;) {
@@ -627,27 +635,29 @@ namespace librealsense
     }
 
 #if _ALTEK_SF_
-	void spatial_filter::altek_spatial_filter(void * image_data, float alpha, float deltaZ, int iterations)
+	void spatial_filter::altek_spatial_filter(void * image_data, float alpha, float deltaZ, float iterations)
 	{
-		int mask_w_h = 4, mask_h_h = 3;
+		int mask_half = 5, mask_s_half_h = 3;
 		switch (_holes_filling_mode)
 		{
-			case 0:			mask_w_h = 1, mask_h_h = 1;		break;
-			case 1:			mask_w_h = 2, mask_h_h = 2;		break;
-			case 2:			mask_w_h = 3, mask_h_h = 3;		break;
-			case 3:			mask_w_h = 4, mask_h_h = 3;		break;
-			case 4:			mask_w_h = 4, mask_h_h = 4;		break;
-			default:			mask_w_h = 2, mask_h_h = 2;		break;
+			case 0:			mask_half = 4, mask_s_half_h = 2;		break;
+			case 1:			mask_half = 5, mask_s_half_h = 2;		break;
+			case 2:			mask_half = 4, mask_s_half_h = 3;		break;
+			case 3:			mask_half = 5, mask_s_half_h = 3;		break;
+			case 4:			mask_half = 6, mask_s_half_h = 3;		break;
+			case 5:			mask_half = 7, mask_s_half_h = 3;		break;
+			default:			mask_half = 5, mask_s_half_h = 3;		break;
 		}
 		
 		//------ MDC & DC  buffer initialization ----------------
 		uint16_t* image = reinterpret_cast<uint16_t*>(image_data);
-		int width2 = static_cast<int>(_width) + mask_w_h * 2 + 1;
-		int height2 = static_cast<int>(_height) + mask_h_h * 2 + 1;
-	
+		int width2 = static_cast<int>(_width) + mask_half * 2 + 1;
+		int height2 = static_cast<int>(_height) + mask_half * 2 + 1;
+		int iter = 1;
+
 		//------ Apply Filter --------------------------------------
-		_altek_sf_mdc(image, _spatial_delta_LUT, _spatial_value_integralimage, _spatial_count_integralimage, mask_w_h, mask_h_h, width2, height2);
-		_altek_sf_dc(image, _spatial_count_integralimage, iterations, mask_w_h, mask_h_h, width2, height2);
+		_altek_sf_mdc(image, iterations,_spatial_delta_LUT, _spatial_value_integralimage, _spatial_count_integralimage, mask_half, mask_s_half_h, width2, height2);
+		_altek_sf_dc(image, _spatial_count_integralimage, iter, mask_half, width2, height2);
 	}
 
 	void  spatial_filter::_altek_sf_mdc_th_init(uint16_t* spatial_delta_LUT)
@@ -671,31 +681,31 @@ namespace librealsense
 		}
 	}
 
-	void  spatial_filter::_altek_sf_mdc(uint16_t* image, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_w_h, int mask_h_h, int width2, int height2)
+	void  spatial_filter::_altek_sf_mdc(uint16_t* image, float thr, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_half, int mask_s_half, int width2, int height2)
 	{
 		memset(timage, 0, width2*height2 * sizeof(int32_t));
 		memset(cimage, 0, width2*height2 * sizeof(int32_t));
-		for (int u = mask_h_h + 1; u < height2 - mask_h_h; u++)
+		for (int u = mask_half + 1; u < height2 - mask_half; u++)
 		{
 			int c_sum = 0;
 			int t_sum = 0;
 			int* cDst = cimage + u * width2;
 			int* imDst = timage + u * width2;
-			uint16_t *imOri = image + (u - mask_h_h - 1) * _width + (-mask_w_h - 1);
-			for (int v = mask_w_h + 1; v < width2 - mask_w_h; v++)
+			uint16_t *imOri = image + (u - mask_half - 1) * _width + (-mask_half - 1);
+			for (int v = mask_half + 1; v < width2 - mask_half; v++)
 			{
 				if (imOri[v] > 0)c_sum++;
 				cDst[v] = cDst[v - width2] + c_sum;
 				t_sum += static_cast<int>(imOri[v]);
 				imDst[v] = imDst[v - width2] + t_sum;
 			}
-			for (int v = width2 - mask_w_h; v < width2; v++)
+			for (int v = width2 - mask_half; v < width2; v++)
 			{
 				cDst[v] = cDst[v - width2] + c_sum;
 				imDst[v] = imDst[v - width2] + t_sum;
 			}
 		}
-		for (int u = height2 - mask_h_h; u < height2; u++)
+		for (int u = height2 - mask_half; u < height2; u++)
 		{
 			int* cDst = cimage + u * width2;
 			int* imDst = timage + u * width2;
@@ -705,54 +715,89 @@ namespace librealsense
 				imDst[v] = imDst[v - width2];
 			}
 		}
+
+		int diff_mask_w = mask_half - mask_s_half;
+		int diff_mask_h = mask_half - mask_s_half;
+
 		for (int u = 0; u < _height; u++)
 		{
 			int *cDst1 = cimage + (u)* width2;
-			int *cDst2 = cimage + (u)* width2 + (mask_w_h + mask_w_h + 1);
-			int *cDst3 = cimage + (u + mask_h_h + mask_h_h + 1) * width2;
-			int *cDst4 = cimage + (u + mask_h_h + mask_h_h + 1) * width2 + (mask_w_h + mask_w_h + 1);
+			int *cDst2 = cimage + (u)* width2 + (mask_half + mask_half + 1);
+			int *cDst3 = cimage + (u + mask_half + mask_half + 1) * width2;
+			int *cDst4 = cimage + (u + mask_half + mask_half + 1) * width2 + (mask_half + mask_half + 1);
 			int *imDst1 = timage + (u)* width2;
-			int *imDst2 = timage + (u)* width2 + (mask_w_h + mask_w_h + 1);
-			int *imDst3 = timage + (u + mask_h_h + mask_h_h + 1) * width2;
-			int *imDst4 = timage + (u + mask_h_h + mask_h_h + 1) * width2 + (mask_w_h + mask_w_h + 1);
+			int *imDst2 = timage + (u)* width2 + (mask_half + mask_half + 1);
+			int *imDst3 = timage + (u + mask_half + mask_half + 1) * width2;
+			int *imDst4 = timage + (u + mask_half + mask_half + 1) * width2 + (mask_half + mask_half + 1);
+
+			int* cDst1_df = cimage + (u+ diff_mask_h)*width2+ diff_mask_w;
+			int* cDst2_df = cimage + (u+ diff_mask_h)*width2 + (mask_half + mask_half + 1- diff_mask_w);
+			int* cDst3_df = cimage + (u + mask_half + mask_half + 1- diff_mask_h) * width2+ diff_mask_w;
+			int* cDst4_df = cimage + (u + mask_half + mask_half + 1- diff_mask_h) * width2 + (mask_half + mask_half + 1- diff_mask_w);
+			int* imDst1_df = timage + (u + diff_mask_h)*width2+ diff_mask_w;
+			int* imDst2_df = timage + (u + diff_mask_h)*width2 + (mask_half + mask_half + 1- diff_mask_w);
+			int* imDst3_df = timage + (u + mask_half + mask_half + 1 - diff_mask_h) * width2+ diff_mask_w;
+			int* imDst4_df = timage + (u + mask_half + mask_half + 1 - diff_mask_h) * width2 + (mask_half + mask_half + 1- diff_mask_w);
+
 			uint16_t *imOri = image + u * _width;
 			for (int v = 0; v < _width; v++)
 			{
 				int dCnt = cDst1[v] + cDst4[v] - cDst2[v] - cDst3[v];
 				int dDistance_Sum = imDst1[v] + imDst4[v] - imDst2[v] - imDst3[v];
+
+				int dCnt_df = cDst1_df[v] + cDst4_df[v] - cDst2_df[v] - cDst3_df[v];
+				int dDistance_Sum_df = imDst1_df[v] + imDst4_df[v] - imDst2_df[v] - imDst3_df[v];
+
 				int dDistance_Avg = 0;
+				int dDistance_Avg_df = 0;
+
 				if (imOri[v]> 0)
 				{
-					dDistance_Avg = (dDistance_Sum + (dCnt / 2)) / dCnt;
-					if (abs(dDistance_Avg - static_cast<int>(imOri[v])) >spatial_delta_LUT[dDistance_Avg])
+					dDistance_Avg = (dDistance_Sum + (dCnt >>1)) / dCnt;
+					dDistance_Avg_df = (dDistance_Sum_df + (dCnt_df >> 1)) / dCnt_df;
+
+					int ori_val = static_cast<int>(imOri[v]);
+					int m_th = spatial_delta_LUT[dDistance_Avg_df];
+					int s_th = int(m_th * thr+1);
+					int diff1 = abs(dDistance_Avg_df - ori_val);
+					int diff2 = abs(dDistance_Avg - ori_val);
+
+					if (diff1 > m_th)
+					{
 						imOri[v] = 0;
+					}
+					else if (diff2 < s_th)
+					{
+							int r = (diff2 <<7) / s_th;
+							imOri[v] = uint16_t((dDistance_Avg * (128-r) + dDistance_Avg_df *r)>>7);
+					}
 				}
 			}
 		}
 	}
 
-	void  spatial_filter::_altek_sf_dc(uint16_t * image, int* cimage, int iterations, int mask_w_h, int mask_h_h, int width2, int height2)
+	void  spatial_filter::_altek_sf_dc(uint16_t * image, int* cimage, int iterations, int mask_half, int width2, int height2)
 	{
-		int tmp_Den_Thd = (int)((mask_w_h * 2 + 1)*(mask_h_h * 2 + 1)*_spatial_alpha_param + 0.5f);
+		int tmp_Den_Thd = (int)((mask_half * 2 + 1)*(mask_half * 2 + 1)*_spatial_alpha_param + 0.5f);
 		for (int i = 0; i<(iterations); i++)
 		{
 			memset(cimage, 0, width2*height2 * sizeof(int32_t));
-			for (int u = mask_h_h + 1; u < height2 - mask_h_h; u++)
+			for (int u = mask_half + 1; u < height2 - mask_half; u++)
 			{
 				int c_sum = 0;
 				int* cDst = cimage + u * width2;
-				uint16_t *imOri = image + (u - mask_h_h - 1) * _width + (-mask_w_h - 1);
-				for (int v = mask_w_h + 1; v < width2 - mask_w_h; v++)
+				uint16_t *imOri = image + (u - mask_half - 1) * _width + (-mask_half - 1);
+				for (int v = mask_half + 1; v < width2 - mask_half; v++)
 				{
 					if (imOri[v] > 0)c_sum++;
 					cDst[v] = cDst[v - width2] + c_sum;
 				}
-				for (int v = width2 - mask_w_h; v < width2; v++)
+				for (int v = width2 - mask_half; v < width2; v++)
 				{
 					cDst[v] = cDst[v - width2] + c_sum;
 				}
 			}
-			for (int u = height2 - mask_h_h; u < height2; u++)
+			for (int u = height2 - mask_half; u < height2; u++)
 			{
 				int* cDst = cimage + u * width2;
 				for (int v = 0; v < width2; v++)
@@ -763,9 +808,9 @@ namespace librealsense
 			for (int u = 0; u < _height; u++)
 			{
 				int *cDst1 = cimage + (u)* width2;
-				int *cDst2 = cimage + (u)* width2 + (mask_w_h + mask_w_h + 1);
-				int *cDst3 = cimage + (u + mask_h_h + mask_h_h + 1) * width2;
-				int *cDst4 = cimage + (u + mask_h_h + mask_h_h + 1) * width2 + (mask_w_h + mask_w_h + 1);
+				int *cDst2 = cimage + (u)* width2 + (mask_half + mask_half + 1);
+				int *cDst3 = cimage + (u + mask_half + mask_half + 1) * width2;
+				int *cDst4 = cimage + (u + mask_half + mask_half + 1) * width2 + (mask_half + mask_half + 1);
 				uint16_t *imOri = image + u * _width;
 				for (int v = 0; v < _width; v++)
 				{

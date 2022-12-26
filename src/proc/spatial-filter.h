@@ -14,7 +14,7 @@
 #include "../include/librealsense2/hpp/rs_processing.hpp"
 
 #define _ALTEK_SF_ 1
-#define _ALTEK_SF_VERSION_ V1.0
+#define _ALTEK_SF_VERSION_ V1.1
 
 namespace librealsense
 {
@@ -30,13 +30,12 @@ namespace librealsense
         rs2::frame process_frame(const rs2::frame_source& source, const rs2::frame& f) override;
 
         template <typename T>
-		void dxf_smooth(void *frame_data, float alpha, float delta, int iterations)
+		void dxf_smooth(void *frame_data, float alpha, float delta, float iterations)
 		{
 #if _ALTEK_SF_
-			if (_extension_type == RS2_EXTENSION_DEPTH_FRAME)
-			{
-				altek_spatial_filter(frame_data, alpha, delta, iterations);
-			}
+            //recursive_filter_horizontal<T>(frame_data, iterations, delta);
+            //recursive_filter_vertical<T>(frame_data, iterations, delta);
+            altek_spatial_filter(frame_data, alpha, delta, iterations);
 #else
 			static_assert((std::is_arithmetic<T>::value), "Spatial filter assumes numeric types");
 			bool fp = (std::is_floating_point<T>::value);
@@ -68,15 +67,15 @@ namespace librealsense
 		//define min kit distance estimation
 		#define _ALTEK_SF_MIN_DIST_ 100     
 		//define max Mean Difference Check Threshold (for disparity)
-		#define _ALTEK_SF_DELTA_MAX_ 10   
+		#define _ALTEK_SF_DELTA_MAX_ 5   
 		//spatial filter main fuction
-		void altek_spatial_filter(void * image_data, float alpha, float deltaZ, int iterations);                                                                                                                    
+		void altek_spatial_filter(void * image_data, float alpha, float deltaZ, float iterations);
 		//sub function, initial Mean Difference Check Threshold LUT
 		void _altek_sf_mdc_th_init(uint16_t* spatial_delta_LUT);                                                                                                                                                                   
 		//sub function, do Mean Difference Check
-		void _altek_sf_mdc(uint16_t* image, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_w_h, int mask_h_h, int width2, int height2);    
+		void _altek_sf_mdc(uint16_t* image, float thr, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_half, int mask_s_half, int width2, int height2);
 		//sub function, do Density Check 	
-		void _altek_sf_dc(uint16_t * image, int* cimage, int iterations, int mask_w_h, int mask_h_h, int width2, int height2);                                                          
+		void _altek_sf_dc(uint16_t * image, int* cimage, int iterations, int mask_half, int width2, int height2);                                                          
 //---------------------------------
 #endif
 
@@ -92,8 +91,9 @@ namespace librealsense
             const float round = fp ? 0.f : 0.5f;
             // define invalid inputs
             const T valid_threshold = fp ? static_cast<T>(std::numeric_limits<T>::epsilon()) : static_cast<T>(1);
+#if !_ALTEK_SF_
             const T delta_z = static_cast<T>(deltaZ);
-
+#endif
             auto image = reinterpret_cast<T*>(image_data);
             size_t cur_fill = 0;
 
@@ -114,7 +114,9 @@ namespace librealsense
                         {
                             cur_fill = 0;
                             T diff = static_cast<T>(fabs(val1 - val0));
-
+#if _ALTEK_SF_
+                            T delta_z = static_cast<T>((_spatial_delta_LUT[uint16_t(val1)]>>1));
+#endif
                             if (diff >= valid_threshold && diff <= delta_z)
                             {
                                 float filtered = val1 * alpha + val0 * (1.0f - alpha);
@@ -151,7 +153,9 @@ namespace librealsense
                         {
                             cur_fill = 0;
                             T diff = static_cast<T>(fabs(val1 - val0));
-
+#if _ALTEK_SF_
+                            T delta_z = static_cast<T>((_spatial_delta_LUT[uint16_t(val0)] >> 1));
+#endif
                             if (diff <= delta_z)
                             {
                                 float filtered = val0 * alpha + val1 * (1.0f - alpha);
@@ -187,8 +191,9 @@ namespace librealsense
             const float round = fp ? 0.f : 0.5f;
             // define invalid range
             const T valid_threshold = fp ? static_cast<T>(std::numeric_limits<T>::epsilon()) : static_cast<T>(1);
+#if !_ALTEK_SF_
             const T delta_z = static_cast<T>(deltaZ);
-
+#endif
             auto image = reinterpret_cast<T*>(image_data);
 
             // we'll do one row at a time, top to bottom, then bottom to top
@@ -208,6 +213,9 @@ namespace librealsense
                     //if ((fabs(im0) >= valid_threshold) && (fabs(imw) >= valid_threshold))
                     {
                         T diff = static_cast<T>(fabs(im0 - imw));
+#if _ALTEK_SF_
+                        T delta_z = static_cast<T>((_spatial_delta_LUT[uint16_t(imw)] >> 1));
+#endif
                         if (diff < delta_z)
                         {
                             float filtered = imw * alpha + im0 * (1.f - alpha);
@@ -230,6 +238,9 @@ namespace librealsense
                     if ((fabs(im0) >= valid_threshold) && (fabs(imw) >= valid_threshold))
                     {
                         T diff = static_cast<T>(fabs(im0 - imw));
+#if _ALTEK_SF_
+                        T delta_z = static_cast<T>((_spatial_delta_LUT[uint16_t(im0)] >> 1));
+#endif
                         if (diff < delta_z)
                         {
                             float filtered = im0 * alpha + imw * (1.f - alpha);
@@ -292,11 +303,12 @@ namespace librealsense
 
         float                   _spatial_alpha_param;
 #if _ALTEK_SF_
-		float                 _spatial_delta_param;
+        float                 _spatial_delta_param;
+        float                 _spatial_iterations;
 #else
 		uint8_t                 _spatial_delta_param;
-#endif
         uint8_t                 _spatial_iterations;
+#endif
         float                   _spatial_edge_threshold;
         size_t                  _width, _height, _stride;
         size_t                  _bpp;
