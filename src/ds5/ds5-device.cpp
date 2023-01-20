@@ -1504,6 +1504,24 @@ namespace librealsense
 
     }
 
+	uint32_t ds5_device::get_al3d_error() 
+	{
+		uint32_t err_code_0 = 0, err_code_1 = 0;
+		
+		if ((_pid == 0x99AA)||(_pid == 0x99BB))
+		{		
+		   	if (_al3d_fw_version >= firmware_version("0.0.1.261"))
+			{
+				auto& raw_depth_sensor =  get_raw_depth_sensor();
+				auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
+				
+				al3d_device_xu_cmd->get_PTS_Time(&err_code_0, &err_code_1);
+			}
+		}
+		
+		return err_code_0;
+	}
+
     notification ds5_notification_decoder::decode(int value)
     {
         if (ds::ds5_fw_error_report.find(static_cast<uint8_t>(value)) != ds::ds5_fw_error_report.end())

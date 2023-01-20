@@ -1182,6 +1182,14 @@ void rs2_hardware_reset(const rs2_device* device, rs2_error** error) BEGIN_API_C
 }
 HANDLE_EXCEPTIONS_AND_RETURN(, device)
 
+
+uint32_t rs2_get_al3d_error(const rs2_device* device, rs2_error** error) BEGIN_API_CALL
+{
+    VALIDATE_NOT_NULL(device);
+    return device->device->get_al3d_error();
+}
+HANDLE_EXCEPTIONS_AND_RETURN(0, device)
+
 // Verify  and provide API version encoded as integer value
 int rs2_get_api_version(rs2_error** error) BEGIN_API_CALL
 {

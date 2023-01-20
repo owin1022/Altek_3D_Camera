@@ -264,6 +264,8 @@ namespace librealsense
 
         virtual void hardware_reset() = 0;
 
+		virtual uint32_t get_al3d_error() = 0;
+
         virtual std::shared_ptr<matcher> create_matcher(const frame_holder& frame) const = 0;
 
         virtual std::shared_ptr<context> get_context() const = 0;

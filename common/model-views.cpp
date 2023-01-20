@@ -6496,7 +6496,29 @@ namespace rs2
             return sm->streaming;
         });
     }
+	
+    uint32_t device_model::get_al3d_error()
+    {
+		uint32_t al_err = 0;
+		
+		std::string pid = dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
 
+		if ((pid == "99AA")||(pid == "99BB"))
+		{	
+			al_err = dev.get_al3d_error();
+
+			if((al_err != 0)&&(al3d_error != al_err))
+			{
+				std::string msg = to_string() << "a3ld error : 0x" << std::hex << al_err;
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+			}
+
+			al3d_error = al_err;
+		}
+
+		return al3d_error;
+    }
+	
     void device_model::draw_controls(float panel_width, float panel_height,
         ux_window& window,
         std::string& error_message,
@@ -6743,6 +6765,7 @@ namespace rs2
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, sensor_bg);
         ImGui::PushStyleColor(ImGuiCol_Text, light_grey);
         ImGui::PushFont(window.get_font());
+		get_al3d_error();
 
         // Draw menu foreach subdevice with its properties
         for (auto&& sub : subdevices)

@@ -32,6 +32,7 @@ namespace librealsense
         const sensor_interface& get_sensor(size_t i) const override;
         void hardware_reset() override;
 
+		uint32_t get_al3d_error() override { return 0;}
 
         bool extend_to(rs2_extension extension_type, void** ext) override;
         virtual std::shared_ptr<matcher> create_matcher(const frame_holder& frame) const override;

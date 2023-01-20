@@ -95,6 +95,15 @@ namespace rs2
             error::handle(e);
         }
 
+        uint32_t get_al3d_error()
+        {
+            rs2_error* e = nullptr;
+
+            auto result = rs2_get_al3d_error(_dev.get(), &e);
+            error::handle(e);
+			return result;
+        }
+
         device& operator=(const std::shared_ptr<rs2_device> dev)
         {
             _dev.reset();

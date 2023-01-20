@@ -224,6 +224,11 @@ void device::hardware_reset()
     throw not_implemented_exception(to_string() << __FUNCTION__ << " is not implemented for this device!");
 }
 
+uint32_t device::get_al3d_error() 
+{
+	throw not_implemented_exception(to_string() << __FUNCTION__ << " is not implemented for this device!");
+}
+
 std::shared_ptr<matcher> device::create_matcher(const frame_holder& frame) const
 {
 

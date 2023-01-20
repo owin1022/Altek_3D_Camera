@@ -110,6 +110,8 @@ namespace librealsense
 
         virtual void hardware_reset() override;
 
+		uint32_t get_al3d_error() override { return 0;}
+		
         virtual std::shared_ptr<matcher> create_matcher(const frame_holder& frame) const override;
 
         virtual std::shared_ptr<context> get_context() const override;

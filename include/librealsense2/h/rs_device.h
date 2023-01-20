@@ -81,6 +81,15 @@ int rs2_supports_device_info(const rs2_device* device, rs2_camera_info info, rs2
 void rs2_hardware_reset(const rs2_device * device, rs2_error ** error);
 
 /**
+* Get al3d camera error code.
+* \param[in]  device    The RealSense device to check
+* \param[in]  info      The parameter to check for support
+* \param[out] error     If non-null, receives any error that occurs during this call, otherwise, errors are ignored
+* \return               Error code
+*/
+uint32_t rs2_get_al3d_error(const rs2_device* device, rs2_error** error);
+
+/**
 * Send raw data to device
 * \param[in]  device                    RealSense device to send data to
 * \param[in]  raw_data_to_send          Raw data to be sent to device
