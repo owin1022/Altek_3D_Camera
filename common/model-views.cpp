@@ -6509,7 +6509,7 @@ namespace rs2
 
 			if((al_err != 0)&&(al3d_error != al_err))
 			{
-				std::string msg = to_string() << "a3ld error : 0x" << std::hex << al_err;
+				std::string msg = to_string() << "al3d info : 0x" << std::hex << al_err;
 				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
 			}
 
