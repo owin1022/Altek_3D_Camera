@@ -48,6 +48,7 @@ EXPORTS
     rs2_start_cpp
     rs2_stop
     rs2_hardware_reset
+    rs2_get_al3d_error
 
     rs2_set_notifications_callback
     rs2_set_notifications_callback_cpp
