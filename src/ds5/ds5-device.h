@@ -57,6 +57,8 @@ namespace librealsense
         void hardware_reset() override;
 
 	    uint32_t get_al3d_error() override;
+		bool set_al3d_param(int p1, int p2, int p3, int p4) override;
+		
         void create_snapshot(std::shared_ptr<debug_interface>& snapshot) const override;
         void enable_recording(std::function<void(const debug_interface&)> record_action) override;
         platform::usb_spec get_usb_spec() const;

@@ -1507,7 +1507,7 @@ namespace librealsense
 	uint32_t ds5_device::get_al3d_error() 
 	{
 		uint32_t err_code_0 = 0, err_code_1 = 0;
-		
+
 		if ((_pid == 0x99AA)||(_pid == 0x99BB))
 		{		
 		   	if (_al3d_fw_version >= firmware_version("0.0.1.261"))
@@ -1515,11 +1515,43 @@ namespace librealsense
 				auto& raw_depth_sensor =  get_raw_depth_sensor();
 				auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
 				
-				al3d_device_xu_cmd->get_PTS_Time(&err_code_0, &err_code_1);
+				try
+				{
+					al3d_device_xu_cmd->get_PTS_Time(&err_code_0, &err_code_1);
+				}
+				catch (...)
+				{
+				
+				}
 			}
 		}
-		
+
 		return err_code_0;
+	}
+	
+	bool ds5_device::set_al3d_param(int p1, int p2, int p3, int p4)
+	{
+		bool ret = TRUE;
+
+		if ((_pid == 0x99AA)||(_pid == 0x99BB))
+		{	
+			command cmd(ds::fw_cmd::SET_AL3D_PARAM, p1, p2, p3, p4);
+			
+			try
+			{
+				ds5_device::_hw_monitor->send(cmd);
+			}
+			catch (...)
+			{
+				ret = FALSE;
+			}
+		}
+		else
+		{
+			ret = FALSE;
+		}
+		
+		return ret;
 	}
 
     notification ds5_notification_decoder::decode(int value)

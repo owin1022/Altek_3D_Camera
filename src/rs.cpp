@@ -1189,6 +1189,15 @@ uint32_t rs2_get_al3d_error(const rs2_device* device, rs2_error** error) BEGIN_A
     return device->device->get_al3d_error();
 }
 HANDLE_EXCEPTIONS_AND_RETURN(0, device)
+	
+
+bool rs2_set_al3d_param(const rs2_device* device, int p1, int p2, int p3, int p4, rs2_error** error) BEGIN_API_CALL
+{
+    VALIDATE_NOT_NULL(device);
+    return device->device->set_al3d_param(p1, p2, p3, p4);
+}
+HANDLE_EXCEPTIONS_AND_RETURN(0, device)
+
 
 // Verify  and provide API version encoded as integer value
 int rs2_get_api_version(rs2_error** error) BEGIN_API_CALL

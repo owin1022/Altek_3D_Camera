@@ -53,6 +53,8 @@ namespace librealsense
 
 		uint32_t get_al3d_error() override;
 
+		bool set_al3d_param(int p1, int p2, int p3, int p4) override;
+
         virtual std::shared_ptr<matcher> create_matcher(const frame_holder& frame) const override;
 
         size_t find_sensor_idx(const sensor_interface& s) const;

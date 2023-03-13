@@ -100,7 +100,16 @@ namespace rs2
             rs2_error* e = nullptr;
 
             auto result = rs2_get_al3d_error(_dev.get(), &e);
-            //error::handle(e);
+            error::handle(e);
+			return result;
+        }
+
+        bool set_al3d_param(int p1, int p2, int p3, int p4)
+        {
+            rs2_error* e = nullptr;
+
+            auto result = rs2_set_al3d_param(_dev.get(), p1, p2, p3, p4, &e);
+            error::handle(e);
 			return result;
         }
 

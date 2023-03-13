@@ -234,7 +234,8 @@ namespace librealsense
             GETSUBPRESETID  = 0x7D,     // Retrieve sub-preset's name
             RECPARAMSGET    = 0x7E,     // Retrieve depth calibration table in new format (fw >= 5.11.12.100)
             LASERONCONST    = 0x7F,     // Enable Laser On constantly (GS SKU Only)
-            AUTO_CALIB      = 0x80      // auto calibration commands
+            AUTO_CALIB      = 0x80,     // auto calibration commands
+            SET_AL3D_PARAM  = 0xC0      // al3d commands
         };
 
         #define TOSTRING(arg) #arg

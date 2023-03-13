@@ -111,6 +111,8 @@ namespace librealsense
         virtual void hardware_reset() override;
 
 		uint32_t get_al3d_error() override { return 0;}
+
+		bool set_al3d_param(int p1, int p2, int p3, int p4){ return 0;}
 		
         virtual std::shared_ptr<matcher> create_matcher(const frame_holder& frame) const override;
 
