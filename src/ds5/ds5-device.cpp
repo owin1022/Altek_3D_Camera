@@ -1531,7 +1531,7 @@ namespace librealsense
 	
 	bool ds5_device::set_al3d_param(int p1, int p2, int p3, int p4)
 	{
-		bool ret = TRUE;
+		bool ret = true;
 
 		if ((_pid == 0x99AA)||(_pid == 0x99BB))
 		{	
@@ -1543,12 +1543,12 @@ namespace librealsense
 			}
 			catch (...)
 			{
-				ret = FALSE;
+				ret = false;
 			}
 		}
 		else
 		{
-			ret = FALSE;
+			ret = false;
 		}
 		
 		return ret;
