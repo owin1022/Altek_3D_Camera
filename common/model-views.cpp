@@ -6520,6 +6520,37 @@ namespace rs2
 		return al3d_error;
     }
 	
+    //al3d: when using laser-auto, the RS2_OPTION_ENABLE_AUTO_EXPOSURE must on
+    void device_model::check_al3d_laser_and_ae()
+    {
+        uint32_t al_err = 0;
+
+        std::string pid = dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
+
+        if ((pid == "99AA") || (pid == "99BB"))
+        {
+            for (auto&& sub : subdevices)
+            {
+                if (sub->s->is<depth_sensor>()) 
+                {
+                    if (sub->s->supports(RS2_OPTION_EMITTER_ENABLED)) 
+                    {
+                        auto laser_mode = sub->s->get_option(RS2_OPTION_EMITTER_ENABLED);
+                        if (laser_mode == 2)  //laser auto
+                        {
+                            auto ae_mode = sub->s->get_option(RS2_OPTION_ENABLE_AUTO_EXPOSURE);
+                            if (ae_mode == 0)
+                                sub->s->set_option(RS2_OPTION_ENABLE_AUTO_EXPOSURE, 1.f); //enable ae
+                        }
+                    }
+                        
+                }
+                
+            }
+        }
+
+    }
+
     void device_model::draw_controls(float panel_width, float panel_height,
         ux_window& window,
         std::string& error_message,
@@ -7094,6 +7125,7 @@ namespace rs2
                 }
 
                 if (sub->s->is<depth_sensor>()) {
+                    check_al3d_laser_and_ae();
                     for (auto&& pb : sub->const_effects)
                     {
                         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);

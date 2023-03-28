@@ -856,6 +856,7 @@ namespace rs2
 		bool al3di_disable_rgb = false;       
 		bool al3di_is_rgb_streaming = false;  
 		uint32_t get_al3d_error();
+        void check_al3d_laser_and_ae();
     private:
         // This class is in charge of camera accuracy health window parameters,
         // Needed as a member for reseting the window memory on device disconnection.
