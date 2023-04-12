@@ -3,7 +3,8 @@
 
 #include "uvc-device.h"
 
-#define USE_LIBLOG
+//#define USE_LIBLOG
+
 #ifdef USE_LIBLOG
 #undef LOG_TAG
 #define LOG_TAG "uvcstream"
