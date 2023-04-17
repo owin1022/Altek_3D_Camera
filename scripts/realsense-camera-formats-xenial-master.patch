@@ -1,37 +1,15 @@
-From e5d0e1f6e3a35ea469d41aaeccecc69bcda5d37f Mon Sep 17 00:00:00 2001
-From: aangerma <Avishag.Angerman@intel.com>
-From: icarpis <itay.carpis@intel.com>
-From: administrator <evgeni.raikhel@intel.com>
-Date: Thu, 30 Aug 2018 16:07:01 +0300
-
-Subject: [PATCH] RS4xx, ZR300, RS5 Pixel formats for kernel 4.4
-Also include development formats
-
-Date: Wed, 22 Aug 2018 10:02:43 +0300
-
-
----
- drivers/media/usb/uvc/Makefile       |  1 +
- drivers/media/usb/uvc/uvc_driver.c   | 70 ++++++++++++++++++++++++++++++++++++
- drivers/media/usb/uvc/uvcvideo.h     | 43 +++++++++++++++++++++-
- drivers/media/v4l2-core/v4l2-ioctl.c |  6 ++++
- include/uapi/linux/videodev2.h       |  9 ++++-
- 5 files changed, 127 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/media/usb/uvc/Makefile b/drivers/media/usb/uvc/Makefile
-index c26d12f..d86cf22 100644
---- a/drivers/media/usb/uvc/Makefile
-+++ b/drivers/media/usb/uvc/Makefile
+diff -Naur a/drivers/media/usb/uvc/Makefile b/drivers/media/usb/uvc/Makefile
+--- a/drivers/media/usb/uvc/Makefile	2023-04-17 15:41:01.856236000 +0800
++++ b/drivers/media/usb/uvc/Makefile	2023-04-17 14:59:02.156440000 +0800
 @@ -1,3 +1,4 @@
 +CONFIG_MODULE_SIG=n
  uvcvideo-objs  := uvc_driver.o uvc_queue.o uvc_v4l2.o uvc_video.o uvc_ctrl.o \
  		  uvc_status.o uvc_isight.o uvc_debugfs.o
  ifeq ($(CONFIG_MEDIA_CONTROLLER),y)
-diff --git a/drivers/media/usb/uvc/uvc_driver.c b/drivers/media/usb/uvc/uvc_driver.c
-index 4a07535..ac186a7 100644
---- a/drivers/media/usb/uvc/uvc_driver.c
-+++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -168,6 +168,97 @@ static struct uvc_format_desc uvc_fmts[] = {
+diff -Naur a/drivers/media/usb/uvc/uvc_driver.c b/drivers/media/usb/uvc/uvc_driver.c
+--- a/drivers/media/usb/uvc/uvc_driver.c	2023-04-17 15:41:01.856236000 +0800
++++ b/drivers/media/usb/uvc/uvc_driver.c	2023-04-17 15:23:51.467120425 +0800
+@@ -168,6 +168,107 @@
  		.guid		= UVC_GUID_FORMAT_RW10,
  		.fcc		= V4L2_PIX_FMT_SRGGB10P,
  	},
@@ -126,17 +104,27 @@ index 4a07535..ac186a7 100644
 +		.guid		= UVC_GUID_FORMAT_Z16H,
 +		.fcc		= V4L2_PIX_FMT_Z16H,
 +	},
++	{
++		.name		= "AL24 Depth+IR",
++		.guid		= UVC_GUID_FORMAT_AL24,
++		.fcc		= V4L2_PIX_FMT_AL24,
++	},
++	{
++		.name		= "AL32 Depth+IR+IR",
++		.guid		= UVC_GUID_FORMAT_AL32,
++		.fcc		= V4L2_PIX_FMT_AL32,
++	},
  };
  
  /* ------------------------------------------------------------------------
-diff --git a/drivers/media/usb/uvc/uvcvideo.h b/drivers/media/usb/uvc/uvcvideo.h
-index 7e4d3ee..24904e2 100644
---- a/drivers/media/usb/uvc/uvcvideo.h
-+++ b/drivers/media/usb/uvc/uvcvideo.h
-@@ -131,6 +131,60 @@
+diff -Naur a/drivers/media/usb/uvc/uvcvideo.h b/drivers/media/usb/uvc/uvcvideo.h
+--- a/drivers/media/usb/uvc/uvcvideo.h	2023-04-17 15:41:01.856236000 +0800
++++ b/drivers/media/usb/uvc/uvcvideo.h	2023-04-17 15:25:22.937042346 +0800
+@@ -131,7 +131,66 @@
  #define UVC_GUID_FORMAT_RW10 \
  	{ 'R',  'W',  '1',  '0', 0x00, 0x00, 0x10, 0x00, \
  	 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}
+-
 +#define UVC_GUID_FORMAT_RAW8 \
 +    { 'R',  'A',  'W',  '8', 0x66, 0x1a, 0x42, 0xa2, \
 +     0x90, 0x65, 0xd0, 0x18, 0x14, 0xa8, 0xef, 0x8a}
@@ -191,14 +179,19 @@ index 7e4d3ee..24904e2 100644
 +#define UVC_GUID_FORMAT_Z16H \
 +	{ 'Z',  '1',  '6',  'H', 0x00, 0x00, 0x10, 0x00, \
 +	 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}
- 
++#define UVC_GUID_FORMAT_AL24 \
++	{ 0x41,  0x4C,  0x32,  0x034, 0x00, 0x00, 0x10, 0x00, \
++	0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}
++#define UVC_GUID_FORMAT_AL32 \
++	{ 0x41,  0x4C,  0x33,  0x032, 0x00, 0x00, 0x10, 0x00, \
++	0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}
  /* ------------------------------------------------------------------------
   * Driver specific constants.
-diff --git a/drivers/media/v4l2-core/v4l2-ioctl.c b/drivers/media/v4l2-core/v4l2-ioctl.c
-index 5e2a7e5..7ac69b3 100644
---- a/drivers/media/v4l2-core/v4l2-ioctl.c
-+++ b/drivers/media/v4l2-core/v4l2-ioctl.c
-@@ -1229,6 +1229,17 @@ static void v4l_fill_fmtdesc(struct v4l2_fmtdesc *fmt)
+  */
+diff -Naur a/drivers/media/v4l2-core/v4l2-ioctl.c b/drivers/media/v4l2-core/v4l2-ioctl.c
+--- a/drivers/media/v4l2-core/v4l2-ioctl.c	2023-04-17 15:41:01.856236000 +0800
++++ b/drivers/media/v4l2-core/v4l2-ioctl.c	2023-04-17 15:27:22.742337800 +0800
+@@ -1229,6 +1229,19 @@
  	case V4L2_SDR_FMT_CS8:		descr = "Complex S8"; break;
  	case V4L2_SDR_FMT_CS14LE:	descr = "Complex S14LE"; break;
  	case V4L2_SDR_FMT_RU12LE:	descr = "Real U12LE"; break;
@@ -213,14 +206,15 @@ index 5e2a7e5..7ac69b3 100644
 +	case V4L2_PIX_FMT_INZC:		descr = "Planar Depth/Confidence (INZC)"; break;
 +	case V4L2_PIX_FMT_PAIR:		descr = "Relative IR (PAIR)"; break;
 +	case V4L2_PIX_FMT_Z16H:		descr = "Z16 Huffman Compression"; break;
++	case V4L2_PIX_FMT_AL24:		descr = "24-bit Raw data"; break;
++	case V4L2_PIX_FMT_AL32:		descr = "32-bit Raw data"; break;
  
  	default:
  		/* Compressed formats */
-diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
-index 421d274..c17b625 100644
---- a/include/uapi/linux/videodev2.h
-+++ b/include/uapi/linux/videodev2.h
-@@ -624,6 +624,19 @@ struct v4l2_pix_format {
+diff -Naur a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+--- a/include/uapi/linux/videodev2.h	2023-04-17 15:41:01.856236000 +0800
++++ b/include/uapi/linux/videodev2.h	2023-04-17 15:30:06.038678125 +0800
+@@ -624,6 +624,21 @@
  #define V4L2_PIX_FMT_Y8I      v4l2_fourcc('Y', '8', 'I', ' ') /* Greyscale 8-bit L/R interleaved */
  #define V4L2_PIX_FMT_Y12I     v4l2_fourcc('Y', '1', '2', 'I') /* Greyscale 12-bit L/R interleaved */
  #define V4L2_PIX_FMT_Z16      v4l2_fourcc('Z', '1', '6', ' ') /* Depth data 16-bit */
@@ -237,9 +231,8 @@ index 421d274..c17b625 100644
 +#define V4L2_PIX_FMT_INZC     v4l2_fourcc('I', 'N', 'Z', 'C') /* Planar Depth/Confidence */
 +#define V4L2_PIX_FMT_PAIR     v4l2_fourcc('P', 'A', 'I', 'R') /* Relative IR */
 +#define V4L2_PIX_FMT_Z16H     v4l2_fourcc('Z', '1', '6', 'H') /* Depth Z16 custom Huffman Code compression*/
++#define V4L2_PIX_FMT_AL24     v4l2_fourcc('A', 'L', '2', '4') /* ALTEK Depth + IR */
++#define V4L2_PIX_FMT_AL32     v4l2_fourcc('A', 'L', '3', '2') /* ALTEK Depth + IR + IR */
  
  /* SDR formats - used only for Software Defined Radio devices */
  #define V4L2_SDR_FMT_CU8          v4l2_fourcc('C', 'U', '0', '8') /* IQ u8 */
--- 
-2.7.4
-
