@@ -14,7 +14,7 @@
 #include "../include/librealsense2/hpp/rs_processing.hpp"
 
 #define _ALTEK_SF_ 1
-#define _ALTEK_SF_VERSION_ V1.1
+#define _ALTEK_SF_VERSION_ V1.2
 
 namespace librealsense
 {
@@ -75,7 +75,7 @@ namespace librealsense
 		//sub function, do Mean Difference Check
 		void _altek_sf_mdc(uint16_t* image, float thr, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_half, int mask_s_half, int width2, int height2);
 		//sub function, do Density Check 	
-		void _altek_sf_dc(uint16_t * image, int* cimage, int iterations, int mask_half, int width2, int height2);                                                          
+        void _altek_sf_dc(uint16_t* image, int* cimage, int mask_half, int mask_s_half, int width2, int height2, int hard_th);
 //---------------------------------
 #endif
 

@@ -28,13 +28,13 @@ namespace librealsense
 	//Density Check Threshold: value[0-1], means 0%~100%
 	const float alpha_min_val = 0.00f;
 	const float alpha_max_val = 1.00f;
-	const float alpha_default_val = 0.25f;
+	const float alpha_default_val = 0.28f;
 	const float alpha_step = 0.01f;
 	//Mean Difference Check Threshold: value[0-max value], disparity level
 	const float delta_min_val = 0.0f;
 	const float delta_max_val = _ALTEK_SF_DELTA_MAX_*1.0f;
 	const float delta_default_val = 0.38f;
-	const float delta_step = 0.01f; //0.01f;
+	const float delta_step = 0.01f;
 	//Depth Smooth Ratio [0-1], [smooth low - smooth high]
 	const float filter_iter_min = 0.0f;
 	const float filter_iter_max = 1.0f;
@@ -256,7 +256,7 @@ namespace librealsense
         // Spatial domain transform edge-preserving filter
 #if _ALTEK_SF_
 		if (_extension_type == RS2_EXTENSION_DEPTH_FRAME)
-		{
+		{			
 			dxf_smooth<uint16_t>(const_cast<void*>(tgt.get_data()), _spatial_alpha_param, _spatial_edge_threshold, _spatial_iterations);
 		}
 #else
@@ -653,11 +653,13 @@ namespace librealsense
 		uint16_t* image = reinterpret_cast<uint16_t*>(image_data);
 		int width2 = static_cast<int>(_width) + mask_half * 2 + 1;
 		int height2 = static_cast<int>(_height) + mask_half * 2 + 1;
-		int iter = 1;
 
 		//------ Apply Filter --------------------------------------
 		_altek_sf_mdc(image, iterations,_spatial_delta_LUT, _spatial_value_integralimage, _spatial_count_integralimage, mask_half, mask_s_half_h, width2, height2);
-		_altek_sf_dc(image, _spatial_count_integralimage, iter, mask_half, width2, height2);
+
+		_altek_sf_dc(image, _spatial_count_integralimage, mask_half, mask_s_half_h+1, width2, height2,0);
+		_altek_sf_dc(image, _spatial_count_integralimage, mask_half,                              1, width2, height2, 3);
+
 	}
 
 	void  spatial_filter::_altek_sf_mdc_th_init(uint16_t* spatial_delta_LUT)
@@ -683,6 +685,9 @@ namespace librealsense
 
 	void  spatial_filter::_altek_sf_mdc(uint16_t* image, float thr, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_half, int mask_s_half, int width2, int height2)
 	{
+		int mask_Den_Thd = mask_s_half * 2 + 1;
+		int tmp_Den_Thd = (int)((mask_s_half * 2 + 1) * (mask_s_half * 2 + 1) * 0.25 + 0.5f);
+
 		memset(timage, 0, width2*height2 * sizeof(int32_t));
 		memset(cimage, 0, width2*height2 * sizeof(int32_t));
 		for (int u = mask_half + 1; u < height2 - mask_half; u++)
@@ -762,64 +767,86 @@ namespace librealsense
 					int diff1 = abs(dDistance_Avg_df - ori_val);
 					int diff2 = abs(dDistance_Avg - ori_val);
 
-					if (diff1 > m_th)
+					if (dCnt_df < tmp_Den_Thd)
+					{
+						int m_th2 = m_th / (1 + (2.0* (tmp_Den_Thd - dCnt_df)) / tmp_Den_Thd);
+
+						if (dCnt_df < mask_Den_Thd)
+						{
+							imOri[v] = 0;
+						}
+						else if (diff1 > m_th2)
+						{
+							imOri[v] = 0;
+						}
+						else
+						{
+							imOri[v] = dDistance_Avg_df;
+						}
+					}
+					else if (diff1 > m_th)
 					{
 						imOri[v] = 0;
 					}
 					else if (diff2 < s_th)
 					{
-							int r = (diff2 <<7) / s_th;
-							imOri[v] = uint16_t((dDistance_Avg * (128-r) + dDistance_Avg_df *r)>>7);
+						int r = (diff2 <<7) / s_th;
+						imOri[v] = uint16_t((dDistance_Avg * (128-r) + dDistance_Avg_df *r)>>7);
 					}
 				}
 			}
 		}
 	}
 
-	void  spatial_filter::_altek_sf_dc(uint16_t * image, int* cimage, int iterations, int mask_half, int width2, int height2)
+	void spatial_filter::_altek_sf_dc(uint16_t* image, int* cimage, int mask_half, int mask_s_half, int width2, int height2, int hard_th)
 	{
-		int tmp_Den_Thd = (int)((mask_half * 2 + 1)*(mask_half * 2 + 1)*_spatial_alpha_param + 0.5f);
-		for (int i = 0; i<(iterations); i++)
+		memset(cimage, 0, width2 * height2 * sizeof(int32_t));
+		for (int u = mask_half + 1; u < height2 - mask_half; u++)
 		{
-			memset(cimage, 0, width2*height2 * sizeof(int32_t));
-			for (int u = mask_half + 1; u < height2 - mask_half; u++)
+			int c_sum = 0;
+			int* cDst = cimage + u * width2;
+			uint16_t* imOri = image + (u - mask_half - 1) * _width + (-mask_half - 1);
+			for (int v = mask_half + 1; v < width2 - mask_half; v++)
 			{
-				int c_sum = 0;
-				int* cDst = cimage + u * width2;
-				uint16_t *imOri = image + (u - mask_half - 1) * _width + (-mask_half - 1);
-				for (int v = mask_half + 1; v < width2 - mask_half; v++)
-				{
-					if (imOri[v] > 0)c_sum++;
-					cDst[v] = cDst[v - width2] + c_sum;
-				}
-				for (int v = width2 - mask_half; v < width2; v++)
-				{
-					cDst[v] = cDst[v - width2] + c_sum;
-				}
+				if (imOri[v] > 0)c_sum++;
+				cDst[v] = cDst[v - width2] + c_sum;
 			}
-			for (int u = height2 - mask_half; u < height2; u++)
+			for (int v = width2 - mask_half; v < width2; v++)
 			{
-				int* cDst = cimage + u * width2;
-				for (int v = 0; v < width2; v++)
-				{
-					cDst[v] = cDst[v - width2];
-				}
+				cDst[v] = cDst[v - width2] + c_sum;
 			}
-			for (int u = 0; u < _height; u++)
+		}
+		for (int u = height2 - mask_half; u < height2; u++)
+		{
+			int* cDst = cimage + u * width2;
+			for (int v = 0; v < width2; v++)
 			{
-				int *cDst1 = cimage + (u)* width2;
-				int *cDst2 = cimage + (u)* width2 + (mask_half + mask_half + 1);
-				int *cDst3 = cimage + (u + mask_half + mask_half + 1) * width2;
-				int *cDst4 = cimage + (u + mask_half + mask_half + 1) * width2 + (mask_half + mask_half + 1);
-				uint16_t *imOri = image + u * _width;
-				for (int v = 0; v < _width; v++)
+				cDst[v] = cDst[v - width2];
+			}
+		}
+
+		int diff_mask_w = mask_half - mask_s_half;
+		int diff_mask_h = mask_half - mask_s_half;
+		int tmp_Den_Thd = (int)((mask_half * 2 + 1) * (mask_half * 2 + 1) * _spatial_alpha_param + 0.5f);
+		if (hard_th != 0 )
+		{
+			tmp_Den_Thd = hard_th;
+		}
+
+		for (int u = 0; u < _height; u++)
+		{
+			int* cDst1 = cimage + (u + diff_mask_h)*width2 + diff_mask_w;
+			int* cDst2 = cimage + (u + diff_mask_h)*width2 + (mask_half + mask_half + 1 - diff_mask_w);
+			int* cDst3 = cimage + (u + mask_half + mask_half + 1 - diff_mask_h) * width2 + diff_mask_w;
+			int* cDst4 = cimage + (u + mask_half + mask_half + 1 - diff_mask_h) * width2 + (mask_half + mask_half + 1 - diff_mask_w);
+			uint16_t* imOri = image + u * _width;
+			for (int v = 0; v < _width; v++)
+			{
+				int dCnt = cDst1[v] + cDst4[v] - cDst2[v] - cDst3[v];
+				if (imOri[v] > 0)
 				{
-					int dCnt = cDst1[v] + cDst4[v] - cDst2[v] - cDst3[v];
-					if (imOri[v]> 0)
-					{
-						if (dCnt < tmp_Den_Thd)
-							imOri[v] = 0;
-					}
+					if (dCnt < tmp_Den_Thd)
+						imOri[v] = 0;
 				}
 			}
 		}
