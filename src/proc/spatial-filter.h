@@ -14,7 +14,7 @@
 #include "../include/librealsense2/hpp/rs_processing.hpp"
 
 #define _ALTEK_SF_ 1
-#define _ALTEK_SF_VERSION_ V1.2
+#define _ALTEK_SF_VERSION_ V1.3
 
 namespace librealsense
 {
@@ -68,6 +68,7 @@ namespace librealsense
 		#define _ALTEK_SF_MIN_DIST_ 100     
 		//define max Mean Difference Check Threshold (for disparity)
 		#define _ALTEK_SF_DELTA_MAX_ 5   
+        #define _ALTEK_SF_MAX_MASK_SIZE_ 12  
 		//spatial filter main fuction
 		void altek_spatial_filter(void * image_data, float alpha, float deltaZ, float iterations);
 		//sub function, initial Mean Difference Check Threshold LUT
@@ -76,6 +77,8 @@ namespace librealsense
 		void _altek_sf_mdc(uint16_t* image, float thr, uint16_t* spatial_delta_LUT, int* timage, int* cimage, int mask_half, int mask_s_half, int width2, int height2);
 		//sub function, do Density Check 	
         void _altek_sf_dc(uint16_t* image, int* cimage, int mask_half, int mask_s_half, int width2, int height2, int hard_th);
+        //sub function, do Special Density Check 	
+        void _altek_sf_spdc(uint16_t* image, int* cimage, int mask_half, int mask_s_half, int width2, int height2, int hard_th);
 //---------------------------------
 #endif
 

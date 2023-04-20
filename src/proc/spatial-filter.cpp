@@ -28,7 +28,7 @@ namespace librealsense
 	//Density Check Threshold: value[0-1], means 0%~100%
 	const float alpha_min_val = 0.00f;
 	const float alpha_max_val = 1.00f;
-	const float alpha_default_val = 0.28f;
+	const float alpha_default_val = 0.33f;
 	const float alpha_step = 0.01f;
 	//Mean Difference Check Threshold: value[0-max value], disparity level
 	const float delta_min_val = 0.0f;
@@ -111,11 +111,10 @@ namespace librealsense
 		{
 			std::lock_guard<std::mutex> lock(_mutex);
 
-			/*
-			if (!spatial_filter_delta->is_valid(val))
-				throw invalid_value_exception(to_string()
-					<< "Unsupported spatial distance threshold: " << val << " is out of range.");
-			*/
+			//if (!spatial_filter_delta->is_valid(val))
+			//	throw invalid_value_exception(to_string()
+			//		<< "Unsupported spatial distance threshold: " << val << " is out of range.");
+
 			_spatial_delta_param = static_cast<float>(val);
 			_spatial_edge_threshold = float(_spatial_delta_param);
 			_spatial_delta_LUT_value_init_flag = 0;
@@ -335,9 +334,10 @@ namespace librealsense
 			_spatial_delta_LUT_value_init_flag = 1;
 		}
 		//------ integral image remalloc --------------------------------
-		if (_spatial_integralimage_size_pixels != _current_frm_size_pixels  || _spatial_integralimage_mask_mode!= _holes_filling_mode)
+		//if (_spatial_integralimage_size_pixels != _current_frm_size_pixels  || _spatial_integralimage_mask_mode!= _holes_filling_mode)
+		if (_spatial_integralimage_size_pixels != _current_frm_size_pixels)
 		{
-			int mask_half = 5;
+			/*int mask_half = 5;
 			switch (_holes_filling_mode)
 			{
 				case 0:			mask_half = 4;		break;
@@ -347,7 +347,8 @@ namespace librealsense
 				case 4:			mask_half = 6;		break;
 				case 5:			mask_half = 7;		break;
 				default:			mask_half = 5;		break;
-			}
+			}*/
+			int mask_half = _ALTEK_SF_MAX_MASK_SIZE_;
 			int width2 = static_cast<int>(_width) + mask_half * 2 + 1;
 			int height2 = static_cast<int>(_height) + mask_half * 2 + 1;
 
@@ -362,7 +363,7 @@ namespace librealsense
 			
 			_spatial_integralimage_buffer_init_flag = 1;
 			_spatial_integralimage_size_pixels = static_cast<int32_t>(_current_frm_size_pixels);
-			_spatial_integralimage_mask_mode = _holes_filling_mode;
+			//_spatial_integralimage_mask_mode = _holes_filling_mode;
 		}
 #endif
     }
@@ -658,8 +659,12 @@ namespace librealsense
 		_altek_sf_mdc(image, iterations,_spatial_delta_LUT, _spatial_value_integralimage, _spatial_count_integralimage, mask_half, mask_s_half_h, width2, height2);
 
 		_altek_sf_dc(image, _spatial_count_integralimage, mask_half, mask_s_half_h+1, width2, height2,0);
-		_altek_sf_dc(image, _spatial_count_integralimage, mask_half,                              1, width2, height2, 3);
-
+		_altek_sf_dc(image, _spatial_count_integralimage, mask_half,                              1, width2, height2, 4);
+		_altek_sf_spdc(image, _spatial_count_integralimage,
+			                   _ALTEK_SF_MAX_MASK_SIZE_              , mask_s_half_h, 
+			_width+    _ALTEK_SF_MAX_MASK_SIZE_ * 2 + 1, 
+			_height + _ALTEK_SF_MAX_MASK_SIZE_ * 2 + 1, 
+			1500);
 	}
 
 	void  spatial_filter::_altek_sf_mdc_th_init(uint16_t* spatial_delta_LUT)
@@ -769,7 +774,7 @@ namespace librealsense
 
 					if (dCnt_df < tmp_Den_Thd)
 					{
-						int m_th2 = m_th / (1 + (2.0* (tmp_Den_Thd - dCnt_df)) / tmp_Den_Thd);
+						int m_th2 = m_th / (1 +(2.0* (tmp_Den_Thd - dCnt_df)) / tmp_Den_Thd);
 
 						if (dCnt_df < mask_Den_Thd)
 						{
@@ -827,7 +832,7 @@ namespace librealsense
 
 		int diff_mask_w = mask_half - mask_s_half;
 		int diff_mask_h = mask_half - mask_s_half;
-		int tmp_Den_Thd = (int)((mask_half * 2 + 1) * (mask_half * 2 + 1) * _spatial_alpha_param + 0.5f);
+		int tmp_Den_Thd = (int)((mask_s_half * 2 + 1) * (mask_s_half * 2 + 1) * _spatial_alpha_param + 0.5f);
 		if (hard_th != 0 )
 		{
 			tmp_Den_Thd = hard_th;
@@ -846,6 +851,67 @@ namespace librealsense
 				if (imOri[v] > 0)
 				{
 					if (dCnt < tmp_Den_Thd)
+						imOri[v] = 0;
+				}
+			}
+		}
+	}
+	void spatial_filter::_altek_sf_spdc(uint16_t* image, int* cimage, int mask_half, int mask_s_half, int width2, int height2, int hard_th)
+	{
+		memset(cimage, 0, width2 * height2 * sizeof(int32_t));
+		for (int u = mask_half + 1; u < height2 - mask_half; u++)
+		{
+			int c_sum = 0;
+			int* cDst = cimage + u * width2;
+			uint16_t* imOri = image + (u - mask_half - 1) * _width + (-mask_half - 1);
+			for (int v = mask_half + 1; v < width2 - mask_half; v++)
+			{
+				if (imOri[v] < hard_th && imOri[v]>0)c_sum++;
+				cDst[v] = cDst[v - width2] + c_sum;
+			}
+			for (int v = width2 - mask_half; v < width2; v++)
+			{
+				cDst[v] = cDst[v - width2] + c_sum;
+			}
+		}
+		for (int u = height2 - mask_half; u < height2; u++)
+		{
+			int* cDst = cimage + u * width2;
+			for (int v = 0; v < width2; v++)
+			{
+				cDst[v] = cDst[v - width2];
+			}
+		}
+
+		int diff_mask_w = mask_half - mask_s_half;
+		int diff_mask_h = mask_half - mask_s_half;
+
+		int tmp_Den_Thd = (int)((mask_half * 2 + 1) * (mask_half * 2 + 1) * 0.24 + 0.5f);
+		//int tmp_Den_Thd = (int)((mask_s_half * 2 + 1) * (mask_s_half * 2 + 1) * _spatial_alpha_param + 0.5f);
+
+		int size_Chck = (mask_half * 2 + 1) * (mask_half * 2 + 1);
+		int size = (mask_s_half * 2 + 1) * (mask_s_half * 2 + 1);
+
+		for (int u = 0; u < _height; u++)
+		{
+			int* cDst1_Chck = cimage + (u) * width2 ;
+			int* cDst2_Chck = cimage + (u) * width2 + (mask_half + mask_half + 1);
+			int* cDst3_Chck = cimage + (u + mask_half + mask_half + 1) * width2;
+			int* cDst4_Chck = cimage + (u + mask_half + mask_half + 1) * width2 + (mask_half + mask_half + 1);
+
+			int* cDst1 = cimage + (u + diff_mask_h) * width2 + diff_mask_w;
+			int* cDst2 = cimage + (u + diff_mask_h) * width2 + (mask_half + mask_half + 1 - diff_mask_w);
+			int* cDst3 = cimage + (u + mask_half + mask_half + 1 - diff_mask_h) * width2 + diff_mask_w;
+			int* cDst4 = cimage + (u + mask_half + mask_half + 1 - diff_mask_h) * width2 + (mask_half + mask_half + 1 - diff_mask_w);
+			uint16_t* imOri = image + u * _width;
+			for (int v = 0; v < _width; v++)
+			{
+				int dCnt_Check = cDst1_Chck[v] + cDst4_Chck[v] - cDst2_Chck[v] - cDst3_Chck[v];
+				int dCnt = cDst1[v] + cDst4[v] - cDst2[v] - cDst3[v];
+
+				if (imOri[v] > 0 && imOri[v]< hard_th)
+				{
+					if ((dCnt_Check < tmp_Den_Thd) && (dCnt_Check* size < dCnt * size_Chck))
 						imOri[v] = 0;
 				}
 			}
