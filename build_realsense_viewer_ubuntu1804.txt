@@ -5,15 +5,14 @@ Ref: https://dev.intelrealsense.com/docs/compiling-librealsense-for-linux-ubuntu
 2. sudo apt install cmake
 3. sudo apt-get install git libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev
 4. sudo apt-get install libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev
- 
-
 5. sudo reboot now 
-6. al3d github https://github.com/owin1022/Altek_3D_Camera
+
 6.1 git clone https://github.com/owin1022/Altek_3D_Camera
 6.2 cd Altek_3D_Camera
 6.3 sudo cp config/99-realsense-libusb.rules /etc/udev/rules.d/
 6.4 sudo udevadm control --reload-rules && udevadm trigger
 
+#patch altek IR format in kernel modules
 6.5 bash ./scripts/patch-realsense-ubuntu-lts.sh
 6.6 mkdir build && cd build
 6.7 cmake ../   
