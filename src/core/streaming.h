@@ -268,6 +268,8 @@ namespace librealsense
 
 		virtual bool set_al3d_param(int p1, int p2, int p3, int p4) = 0;
 
+		virtual std::vector<uint8_t> get_al3d_data() = 0;
+
         virtual std::shared_ptr<matcher> create_matcher(const frame_holder& frame) const = 0;
 
         virtual std::shared_ptr<context> get_context() const = 0;

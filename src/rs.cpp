@@ -1198,6 +1198,16 @@ bool rs2_set_al3d_param(const rs2_device* device, int p1, int p2, int p3, int p4
 }
 HANDLE_EXCEPTIONS_AND_RETURN(0, device)
 
+const rs2_raw_data_buffer* rs2_get_al3d_data(const rs2_device* device, rs2_error** error) BEGIN_API_CALL
+{
+	std::vector<uint8_t> res;
+
+    VALIDATE_NOT_NULL(device);
+    res = device->device->get_al3d_data();
+
+	return new rs2_raw_data_buffer{ res };
+}
+HANDLE_EXCEPTIONS_AND_RETURN(0, device)
 
 // Verify  and provide API version encoded as integer value
 int rs2_get_api_version(rs2_error** error) BEGIN_API_CALL

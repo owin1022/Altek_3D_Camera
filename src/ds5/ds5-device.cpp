@@ -1536,10 +1536,11 @@ namespace librealsense
 		if ((_pid == 0x99AA)||(_pid == 0x99BB))
 		{	
 			command cmd(ds::fw_cmd::SET_AL3D_PARAM, p1, p2, p3, p4);
+			_al3d_ret.clear();
 			
 			try
 			{
-				ds5_device::_hw_monitor->send(cmd);
+				_al3d_ret = ds5_device::_hw_monitor->send(cmd);
 			}
 			catch (...)
 			{
@@ -1554,6 +1555,11 @@ namespace librealsense
 		return ret;
 	}
 
+	std::vector<uint8_t> ds5_device::get_al3d_data()
+	{
+		return _al3d_ret;
+	}
+		
     notification ds5_notification_decoder::decode(int value)
     {
         if (ds::ds5_fw_error_report.find(static_cast<uint8_t>(value)) != ds::ds5_fw_error_report.end())

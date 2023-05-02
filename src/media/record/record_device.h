@@ -34,6 +34,7 @@ namespace librealsense
 
 		uint32_t get_al3d_error() override { return 0;}
 		bool set_al3d_param(int p1, int p2, int p3, int p4) override { return 0;}
+		std::vector<uint8_t> get_al3d_data() override { return std::vector<uint8_t>();}
 
         bool extend_to(rs2_extension extension_type, void** ext) override;
         virtual std::shared_ptr<matcher> create_matcher(const frame_holder& frame) const override;

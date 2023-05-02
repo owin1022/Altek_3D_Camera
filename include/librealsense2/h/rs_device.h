@@ -89,6 +89,8 @@ void rs2_hardware_reset(const rs2_device * device, rs2_error ** error);
 */
 uint32_t rs2_get_al3d_error(const rs2_device* device, rs2_error** error);
 bool rs2_set_al3d_param(const rs2_device* device, int p1, int p2, int p3, int p4, rs2_error** error);
+const rs2_raw_data_buffer* rs2_get_al3d_data(const rs2_device* device, rs2_error** error);
+
 
 /**
 * Send raw data to device

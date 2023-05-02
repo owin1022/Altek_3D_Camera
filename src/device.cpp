@@ -234,6 +234,11 @@ bool device::set_al3d_param(int p1, int p2, int p3, int p4)
 	throw not_implemented_exception(to_string() << __FUNCTION__ << " is not implemented for this device!");
 }
 
+std::vector<uint8_t> device::get_al3d_data()
+{
+	throw not_implemented_exception(to_string() << __FUNCTION__ << " is not implemented for this device!");
+}
+
 std::shared_ptr<matcher> device::create_matcher(const frame_holder& frame) const
 {
 

@@ -58,6 +58,7 @@ namespace librealsense
 
 	    uint32_t get_al3d_error() override;
 		bool set_al3d_param(int p1, int p2, int p3, int p4) override;
+		std::vector<uint8_t> get_al3d_data() override;
 		
         void create_snapshot(std::shared_ptr<debug_interface>& snapshot) const override;
         void enable_recording(std::function<void(const debug_interface&)> record_action) override;
@@ -114,6 +115,7 @@ namespace librealsense
         lazy<std::vector<uint8_t>> _color_calib_table_raw;
         std::shared_ptr<lazy<rs2_extrinsics>> _color_extrinsic;
         bool _is_locked = true;
+		std::vector<uint8_t> _al3d_ret;
     };
 
     class ds5u_device : public ds5_device

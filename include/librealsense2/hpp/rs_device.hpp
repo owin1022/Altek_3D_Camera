@@ -113,6 +113,15 @@ namespace rs2
 			return result;
         }
 
+        const rs2_raw_data_buffer* get_al3d_data()
+        {
+            rs2_error* e = nullptr;
+
+            auto result = rs2_get_al3d_data(_dev.get(), &e);
+            error::handle(e);
+			return result;
+        }
+
         device& operator=(const std::shared_ptr<rs2_device> dev)
         {
             _dev.reset();
