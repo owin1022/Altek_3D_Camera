@@ -2664,6 +2664,76 @@ namespace rs2
         return ImGui::Combo(id.c_str(), &new_index, device_names_chars.data(), static_cast<int>(device_names.size()));
     }
 
+    void show_ext_info(stream_profile profile, device dev)
+    {				
+		if(RS2_STREAM_INFRARED == profile.stream_type())		
+		{	
+			bool er = dev.set_al3d_param(501,2,3,4);
+
+			if(er == true)
+			{
+				typedef struct 
+				{
+					uint32_t ulFrameIndex;
+					uint32_t ulExpTime;
+					int16_t  wBV;
+					uint16_t uwISO;
+					uint16_t uwAD_Gain;
+					uint16_t uwFrameRate;
+				}DATA_PIPE_IR;
+				
+				typedef struct 
+				{
+					DATA_PIPE_IR tPipe0mtInfo;
+					DATA_PIPE_IR tPipe1mtInfo;
+					uint16_t uwDepthWidth;
+					uint16_t uwDepthHeight;
+					uint16_t uwDepthType;
+				}IR_DATA;
+			
+				IR_DATA data;
+				int dataSize = 0;
+				rs2_error* e = NULL;
+				std::string msg;
+
+				std::shared_ptr<const rs2_raw_data_buffer> response_bytes(dev.get_al3d_data(),rs2_delete_raw_data);	
+				memcpy(&dataSize,rs2_get_raw_data(response_bytes.get(), &e)+4,4);
+				memcpy(&data,rs2_get_raw_data(response_bytes.get(), &e)+8,dataSize);
+
+				
+				msg = to_string()
+				<< "---===========================----";
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());		
+				msg = to_string()
+				<< "---=== Metadata:PIPE0 Info ===----";
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				msg = to_string()
+				<< "Frame Index: " << data.tPipe0mtInfo.ulFrameIndex << ", FrameRate: " << data.tPipe0mtInfo.uwFrameRate;
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				msg = to_string()
+				<< "(ExpTime,wBV): (" << data.tPipe0mtInfo.ulExpTime << "," << data.tPipe0mtInfo.wBV << "), "
+				<< "(ISO,ADGain): (" << data.tPipe0mtInfo.uwISO << "," << data.tPipe0mtInfo.uwAD_Gain << ")";
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				msg = to_string()
+				<< "---=== Metadata:PIPE1 Info ===----";
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				msg = to_string()
+				<< "Frame Index: " << data.tPipe1mtInfo.ulFrameIndex << ", FrameRate: " << data.tPipe1mtInfo.uwFrameRate;
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				msg = to_string()
+				<< "(ExpTime,wBV): (" << data.tPipe1mtInfo.ulExpTime << "," << data.tPipe1mtInfo.wBV << "), "
+				<< "(ISO,ADGain): (" << data.tPipe1mtInfo.uwISO << "," << data.tPipe1mtInfo.uwAD_Gain << ")";
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				msg = to_string()
+				<< "---=== Metadata:Depth Info ===----";
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				msg = to_string()
+				<< "Depth(w,h,type): (" << data.uwDepthWidth << "," << data.uwDepthHeight << "," << data.uwDepthType << ")";
+				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+			}
+		}			
+    }
+
     void stream_model::show_stream_header(ImFont* font, const rect &stream_rect, viewer_model& viewer)
     {
         const auto top_bar_height = 32.f;
@@ -2876,6 +2946,7 @@ namespace rs2
                 config_file::instance().set(
                     configurations::viewer::show_stream_details,
                     show_stream_details);
+				show_ext_info(profile, dev->dev);
             }
             if (ImGui::IsItemHovered())
             {
@@ -2892,6 +2963,7 @@ namespace rs2
                 config_file::instance().set(
                     configurations::viewer::show_stream_details,
                     show_stream_details);
+				show_ext_info(profile, dev->dev);
             }
             if (ImGui::IsItemHovered())
             {
