@@ -2695,6 +2695,8 @@ namespace rs2
 				int dataSize = 0;
 				rs2_error* e = NULL;
 				std::string msg;
+				float uwViewerGain = 0;
+				float gainUnit = 6.25;
 
 				std::shared_ptr<const rs2_raw_data_buffer> response_bytes(dev.get_al3d_data(),rs2_delete_raw_data);	
 				memcpy(&dataSize,rs2_get_raw_data(response_bytes.get(), &e)+4,4);
@@ -2710,9 +2712,19 @@ namespace rs2
 				msg = to_string()
 				<< "Frame Index: " << data.tPipe0mtInfo.ulFrameIndex << ", FrameRate: " << data.tPipe0mtInfo.uwFrameRate;
 				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+
+				uwViewerGain = data.tPipe0mtInfo.uwISO - 100;
+
+				if (uwViewerGain < gainUnit)
+					uwViewerGain = 1;
+				else
+					uwViewerGain = (std::round((uwViewerGain / gainUnit))+1);
+
 				msg = to_string()
 				<< "(ExpTime,wBV): (" << data.tPipe0mtInfo.ulExpTime << "," << data.tPipe0mtInfo.wBV << "), "
-				<< "(ISO,ADGain): (" << data.tPipe0mtInfo.uwISO << "," << data.tPipe0mtInfo.uwAD_Gain << ")";
+				<< "(ISO,ADGain): (" << data.tPipe0mtInfo.uwISO << "," << data.tPipe0mtInfo.uwAD_Gain << "), "
+				<< "(ViewerGain[manual]): (" << uwViewerGain << ")";
+
 				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
 				msg = to_string()
 				<< "---=== Metadata:PIPE1 Info ===----";
