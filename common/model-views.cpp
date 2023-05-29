@@ -2666,6 +2666,13 @@ namespace rs2
 
     void show_ext_info(stream_profile profile, device dev)
     {				
+    	bool ip_supports =	dev.supports(RS2_CAMERA_INFO_IP_ADDRESS);
+
+		if(ip_supports)
+		{
+			return;
+		}
+		
 		if(RS2_STREAM_INFRARED == profile.stream_type())		
 		{	
 			bool er = dev.set_al3d_param(501,2,3,4);
@@ -6589,13 +6596,18 @@ namespace rs2
 
 		if ((pid == "99AA")||(pid == "99BB"))
 		{	
-			al_err = dev.get_al3d_error();
+			bool ip_supports =	dev.supports(RS2_CAMERA_INFO_IP_ADDRESS);
 
-			if((al_err != 0)&&(al3d_error != al_err))
+			if(!ip_supports)
 			{
-				std::string sn = dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
-				std::string msg = to_string() << "al3d S/N:"<< sn <<",info:0x" << std::hex << al_err;
-				rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				al_err = dev.get_al3d_error();
+
+				if((al_err != 0)&&(al3d_error != al_err))
+				{
+					std::string sn = dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+					std::string msg = to_string() << "al3d S/N:"<< sn <<",info:0x" << std::hex << al_err;
+					rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+				}
 			}
 
 			al3d_error = al_err;

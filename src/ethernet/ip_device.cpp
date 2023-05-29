@@ -419,6 +419,7 @@ rs2_device* rs2_create_net_device(int api_version, const char* address, rs2_erro
     sw_dev.register_info(rs2_camera_info::RS2_CAMERA_INFO_IP_ADDRESS, addr);
     sw_dev.register_info(rs2_camera_info::RS2_CAMERA_INFO_SERIAL_NUMBER, data.serialNum);
     sw_dev.register_info(rs2_camera_info::RS2_CAMERA_INFO_USB_TYPE_DESCRIPTOR, data.usbType);
+	sw_dev.register_info(rs2_camera_info::RS2_CAMERA_INFO_PRODUCT_ID,data.productId);
 
     return sw_dev.get().get();
 }

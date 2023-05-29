@@ -16,6 +16,7 @@ struct DeviceData
     std::string serialNum;
     std::string name;
     std::string usbType;
+	std::string productId;
 };
 
 class IRsRtsp

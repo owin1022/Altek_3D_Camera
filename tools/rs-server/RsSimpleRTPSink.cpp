@@ -98,6 +98,7 @@ std::string getSdpLineForVideoStream(rs2::video_stream_profile& t_videoStream, s
     str.append(getSdpLineForField("bpp", getStreamProfileBpp(t_videoStream.format())));
     str.append(getSdpLineForField("cam_serial_num", device.get()->getDevice().get_info(RS2_CAMERA_INFO_SERIAL_NUMBER)));
     str.append(getSdpLineForField("usb_type", device.get()->getDevice().get_info(RS2_CAMERA_INFO_USB_TYPE_DESCRIPTOR)));
+	str.append(getSdpLineForField("product_id", device.get()->getDevice().get_info(RS2_CAMERA_INFO_PRODUCT_ID)));
     str.append(getSdpLineForField("compression", CompressionFactory::getIsEnabled()));
 
     str.append(getSdpLineForField("ppx", t_videoStream.get_intrinsics().ppx));

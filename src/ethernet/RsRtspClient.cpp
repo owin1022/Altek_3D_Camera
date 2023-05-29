@@ -432,6 +432,7 @@ void RsRTSPClient::continueAfterDESCRIBE(RTSPClient *rtspClient, int resultCode,
             const char *strSerialNumVal = subsession->attrVal_str("cam_serial_num");
             const char *strCamNameVal = subsession->attrVal_str("cam_name");
             const char *strUsbTypeVal = subsession->attrVal_str("usb_type");
+			const char *strProductIdVal = subsession->attrVal_str("product_id");
 
             int width = strWidthVal != "" ? std::stoi(strWidthVal) : 0;
             int height = strHeightVal != "" ? std::stoi(strHeightVal) : 0;
@@ -476,6 +477,7 @@ void RsRTSPClient::continueAfterDESCRIBE(RTSPClient *rtspClient, int resultCode,
             // Return spaces back to string after getting it from the SDP
             std::replace(deviceData.name.begin(), deviceData.name.end(), '^', ' ');
             deviceData.usbType = strUsbTypeVal;
+			deviceData.productId = strProductIdVal;
             rsRtspClient->setDeviceData(deviceData);
 
             long long int uniqueKey = getStreamProfileUniqueKey(videoStream);
