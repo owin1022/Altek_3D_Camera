@@ -1309,6 +1309,28 @@ namespace librealsense
             depth_sensor.register_option(RS2_OPTION_AUTO_GAIN_LIMIT, std::make_shared<auto_gain_limit_option>(*_hw_monitor, &depth_sensor, gain_range));
         }
 
+		if ((_pid == AL3D_PID)||(_pid == AL3Di_PID)) 
+		{
+			if (_recommended_fw_version >= firmware_version("0.0.2.55"))
+			{
+				rs2_option al_opt;
+
+				al_opt = RS2_OPTION_SET_AE_TARGET;
+				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "AE target"));
+			
+				al_opt = RS2_OPTION_SET_MAX_EXPOSURE_TIME;
+				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "max exposure time(us)"));
+			
+				al_opt = RS2_OPTION_SET_MIN_EXPOSURE_TIME;
+				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "min exposure time(us)"));
+
+				al_opt = RS2_OPTION_SET_DEPTH_RECTIFY;
+				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 2, "depth rectify (0-not output, 1-output, 2-meta output)"));
+
+				al_opt = RS2_OPTION_SET_DEPTH_MASK;
+				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "depth mask (0 ~ 50 %)"));
+			}
+		}
         // attributes of md_capture_timing
         auto md_prop_offset = offsetof(metadata_raw, mode) +
             offsetof(md_depth_mode, depth_y_mode) +
@@ -1559,7 +1581,23 @@ namespace librealsense
 	{
 		return _al3d_ret;
 	}
+
+	option_range ds5_device::get_depth_option_range(rs2_option opt)
+	{
+		option_range range = {1.0,1.0,1.0,1.0};
+		bool ret = false;
+
+		ret = set_al3d_param(opt, 0xff, 0xff, 0xff);
+
+		if(ret)
+		{
+			std::vector<uint8_t> data = get_al3d_data();
+			memcpy(&range, &data[8], sizeof(range));
+		}
 		
+        return range;
+	}		
+	
     notification ds5_notification_decoder::decode(int value)
     {
         if (ds::ds5_fw_error_report.find(static_cast<uint8_t>(value)) != ds::ds5_fw_error_report.end())

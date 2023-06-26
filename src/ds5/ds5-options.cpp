@@ -966,4 +966,64 @@ namespace librealsense
 
         return 0;
     }
+
+	al3d_depth_cmd_option::al3d_depth_cmd_option(hw_monitor& hwm, sensor_base* depth_ep, option_range range, rs2_option opt, uint8_t read_opt, std::string name)
+		: option_base(range), _hwm(hwm), _sensor(depth_ep), _opt_id(opt), _read_opt(read_opt)
+	{
+	    _name =  name + " -al3d";
+
+        _range = [range]()
+        {
+            return range;
+        };
+
+		_value = (uint32_t)_range->def;
+	}
+
+	void al3d_depth_cmd_option::set(float value)
+	{
+		if (!is_valid(value))
+			throw invalid_value_exception("set(al3d option) failed! " + std::to_string(value));
+
+		_value = (uint32_t) value;
+		
+		int p1 = _opt_id;
+		int p2 =(_value & 0x00FF0000) >> 16;
+		int p3 =(_value & 0x0000FF00) >> 8;
+		int p4 =_value & 0x000000FF;
+
+		command cmd(ds::fw_cmd::SET_AL3D_PARAM, p1, p2, p3, p4);
+		_hwm.send(cmd);
+		_record_action(*this);
+		
+	}
+
+	float al3d_depth_cmd_option::query() const
+	{
+		return static_cast<float>(_value);
+	}
+
+	option_range al3d_depth_cmd_option::get_range() const
+	{
+		return *_range;
+	}
+
+	bool al3d_depth_cmd_option::is_read_only() const 
+	{
+		if(_read_opt == 1)
+		{
+			return true;
+		}
+		else if(_read_opt == 2)
+		{
+		 	return _sensor && _sensor->is_opened();
+		}
+
+		return false;
+	}
+
+	const char* al3d_depth_cmd_option::get_description() const 
+	{
+		return _name.data();
+	}
 }

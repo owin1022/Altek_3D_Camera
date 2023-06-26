@@ -447,6 +447,11 @@ namespace librealsense
             CASE(VERTICAL_BINNING)
             CASE(RECEIVER_SENSITIVITY)
             case RS2_OPTION_SYNC_PTS_TIME: return "Camera PTS Time";  //al3d
+            CASE(SET_AE_TARGET)
+            CASE(SET_MAX_EXPOSURE_TIME)
+            CASE(SET_MIN_EXPOSURE_TIME)		
+			CASE(SET_DEPTH_RECTIFY)
+			CASE(SET_DEPTH_MASK)		
         default: assert(!is_valid(value)); return UNKNOWN_VALUE;
         }
 #undef CASE

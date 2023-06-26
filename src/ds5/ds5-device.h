@@ -70,6 +70,7 @@ namespace librealsense
         void update_flash(const std::vector<uint8_t>& image, update_progress_callback_ptr callback, int update_mode) override;
         bool check_fw_compatibility(const std::vector<uint8_t>& image) const override;
         void al3d_fw_update_start(const std::vector<uint8_t>& image, update_progress_callback_ptr callback, int update_mode);
+		option_range get_depth_option_range(rs2_option opt);
     protected:
 
         std::vector<uint8_t> get_raw_calibration_table(ds::calibration_table_id table_id) const;
