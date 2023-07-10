@@ -973,7 +973,17 @@ namespace librealsense
         {
             optic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset, 32);;
             asic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset,32);
-
+			
+			auto check_count = 5;
+            while (gvd_buff[module_serial_offset] ==0xFF)  //eeprom maybe not ready. we retry get to gvd.
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2000)); //sleep 2
+                _hw_monitor->get_gvd(gvd_buff.size(), gvd_buff.data(), GVD);
+                optic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset, 32);;
+                asic_serial_str = _hw_monitor->get_module_serial_string(gvd_buff, module_serial_offset, 32);
+                if (--check_count < 0)
+                    break;
+            }
         }
         else 
         {
