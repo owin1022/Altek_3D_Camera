@@ -995,12 +995,22 @@ namespace librealsense
 		command cmd(ds::fw_cmd::SET_AL3D_PARAM, p1, p2, p3, p4);
 		_hwm.send(cmd);
 		_record_action(*this);
-		
 	}
 
 	float al3d_depth_cmd_option::query() const
 	{
-		return static_cast<float>(_value);
+		uint32_t value = 0;
+		command cmd(ds::fw_cmd::SET_AL3D_PARAM, _opt_id,  0xff, 0x0, 0x0);
+		std::vector<uint8_t> data;
+
+		data = _hwm.send(cmd);
+		
+		if (data.empty())
+			throw invalid_value_exception("al3d_depth_cmd_option::query result is empty!");
+		
+		memcpy((void*)&value, &data[8], sizeof(value));
+
+		return static_cast<float>(value);
 	}
 
 	option_range al3d_depth_cmd_option::get_range() const

@@ -7228,7 +7228,7 @@ namespace rs2
                 }
 
                 if (sub->s->is<depth_sensor>()) {
-                    check_al3d_laser_and_ae();
+                    //check_al3d_laser_and_ae();
                     for (auto&& pb : sub->const_effects)
                     {
                         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);

@@ -451,7 +451,9 @@ namespace librealsense
             CASE(SET_MAX_EXPOSURE_TIME)
             CASE(SET_MIN_EXPOSURE_TIME)		
 			CASE(SET_DEPTH_RECTIFY)
-			CASE(SET_DEPTH_MASK)		
+			CASE(SET_DEPTH_MASK)	
+			CASE(SET_DEPTH_NEAR_FEIELD)
+			CASE(SET_DEPTH_MASK_VERTICAL)
         default: assert(!is_valid(value)); return UNKNOWN_VALUE;
         }
 #undef CASE

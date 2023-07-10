@@ -1321,7 +1321,7 @@ namespace librealsense
 
 		if ((_pid == AL3D_PID)||(_pid == AL3Di_PID)) 
 		{
-			if (_recommended_fw_version >= firmware_version("0.0.2.55"))
+			if (_recommended_fw_version >= firmware_version("0.0.2.62"))
 			{
 				rs2_option al_opt;
 
@@ -1334,11 +1334,12 @@ namespace librealsense
 				al_opt = RS2_OPTION_SET_MIN_EXPOSURE_TIME;
 				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "min exposure time(us)"));
 
-				al_opt = RS2_OPTION_SET_DEPTH_RECTIFY;
-				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 2, "depth rectify (0-not output, 1-output, 2-meta output)"));
-
 				al_opt = RS2_OPTION_SET_DEPTH_MASK;
 				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "depth mask (0 ~ 50 %)"));
+
+				al_opt = RS2_OPTION_SET_DEPTH_MASK_VERTICAL;
+				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "depth mask - vertical(0 ~ 50 %)"));
+				
 			}
 		}
         // attributes of md_capture_timing
