@@ -2342,13 +2342,19 @@ namespace rs2
 		}
 		else //for al3d  hardware fps
 		{
+			#if 0
 	        rs2_metadata_type sensor_timestamp_pts = f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_TIMESTAMP);
 	        timestamp = sensor_timestamp_pts;
-	        #if 0  //al3d, will check later..
-	        fps.add_timestamp(f.get_timestamp(), f.get_frame_number());
-	        #else
-	        fps.add_timestamp(timestamp/1000, f.get_frame_number());
-	        #endif
+            fps.add_timestamp(timestamp / 1000, f.get_frame_number());
+			#else  //please using FW version 0.0.2.83
+            timestamp = f.get_timestamp();
+            fps.add_timestamp(timestamp, f.get_frame_number());
+			#endif
+            //for debug
+            //std::string msg = to_string() << "sensor ts: " << std::setprecision(14) << std::fixed << sensor_timestamp_pts << " <==> "  << "frame ts: " << std::setprecision(14) << std::fixed << timestamp;
+            //std::string msg2 = to_string() << "frame ts: " << std::setprecision(14) << std::fixed << timestamp;
+            //rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+
 		}
 		
         view_fps.add_timestamp(glfwGetTime() * 1000, count++);
