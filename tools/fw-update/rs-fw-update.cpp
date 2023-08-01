@@ -60,7 +60,7 @@ void print_device_info(rs2::device d)
     std::cout << "Name: " << camera_info[RS2_CAMERA_INFO_NAME] <<
         ", serial number: " << camera_info[RS2_CAMERA_INFO_SERIAL_NUMBER] <<
         ", update serial number: " << camera_info[RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID] <<
-        ", firmware version: " << camera_info[RS2_CAMERA_INFO_FIRMWARE_VERSION] <<
+        ", firmware version: " << camera_info[RS2_CAMERA_INFO_RECOMMENDED_FIRMWARE_VERSION] <<
         ", USB type: " << camera_info[RS2_CAMERA_INFO_USB_TYPE_DESCRIPTOR] << std::endl;
 }
 
