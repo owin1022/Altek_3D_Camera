@@ -1426,11 +1426,24 @@ namespace librealsense
                     }));
         }
 
-     
+		if ((_pid == AL3D_PID) || (_pid == AL3Di_PID))
+		{
+			if (_al3d_fw_version >= firmware_version("0.0.1.286"))
+			{
+				char ver[4] = { '\0' };
+				
+				bool ret = set_al3d_param(503, 0xff, 0xff, 0xff);
+
+				if (ret)
+				{
+					std::vector<uint8_t> data = get_al3d_data();
+					memcpy(ver, &data[8], 4);
+				}
+
+				device_name.append(" ").append(ver);
+			}
+		}
       
-       
-
-
         register_info(RS2_CAMERA_INFO_NAME, device_name);
         register_info(RS2_CAMERA_INFO_SERIAL_NUMBER, optic_serial);
         register_info(RS2_CAMERA_INFO_ASIC_SERIAL_NUMBER, asic_serial);
@@ -1527,7 +1540,8 @@ namespace librealsense
 
                if (diff_time.count() < 800 || i == 29)  //800us
                {
-                   LOG_INFO(std::to_string(i) << " Time Diff (microseconds): " << std::to_string(diff_time.count()));
+                   //LOG_INFO(std::to_string(i) << " Time Diff (microseconds): " << std::to_string(diff_time.count()));
+				   LOG_INFO(std::to_string(i) << " SN: " << optic_serial << " Time Diff (microseconds): " << std::to_string(diff_time.count()));
                    break;
                }                  
            }
