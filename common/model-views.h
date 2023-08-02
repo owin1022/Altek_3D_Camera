@@ -755,6 +755,7 @@ namespace rs2
         stream_profile profile;
         std::chrono::high_resolution_clock::time_point last_frame;
         double              timestamp = 0.0;
+        double              timestamp2 = 0.0;
         unsigned long long  frame_number = 0;
         rs2_timestamp_domain timestamp_domain = RS2_TIMESTAMP_DOMAIN_SYSTEM_TIME;
         fps_calc            fps, view_fps;

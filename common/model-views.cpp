@@ -2349,6 +2349,8 @@ namespace rs2
 			#else  //please using FW version 0.0.2.83
             timestamp = f.get_timestamp();
             fps.add_timestamp(timestamp, f.get_frame_number());
+            auto now_duration = std::chrono::system_clock::now().time_since_epoch();
+            timestamp2 = std::chrono::duration_cast<std::chrono::milliseconds>(now_duration).count();
 			#endif
             //for debug
             //std::string msg = to_string() << "sensor ts: " << std::setprecision(14) << std::fixed << sensor_timestamp_pts << " <==> "  << "frame ts: " << std::setprecision(14) << std::fixed << timestamp;
@@ -3202,6 +3204,12 @@ namespace rs2
                     to_string() << std::setprecision(2) << std::fixed << view_fps.get_fps(),
                     "Viewer FPS captures how many frames the application manages to render.\n"
                     "Frame drops can occur for variety of reasons." });
+
+                
+                stream_details.push_back({ "Now Timestamp",
+                   to_string() << std::setprecision(2) << std::fixed << timestamp2,
+                   "Now time.\n"
+                   " " });
 
                 stream_details.push_back({ "", "", "" });
             }
