@@ -81,11 +81,11 @@ function choose_kernel_branch {
 			echo Ubuntu-hwe-4.18.0-25.26_18.04.1
 			;;
 		"5.0")									# kernel 5.0 for Ubuntu 18/Bionic Beaver
-            echo 5
+			echo 5
 			;;
 		"5.3")									# kernel 5.3
-            #echo Ubuntu-hwe-5.3.0-64.58_18.04.1
-            echo 5
+			#echo Ubuntu-hwe-5.3.0-64.58_18.04.1
+			echo 5
 			;;
 		"5.4")									# kernel 5.4
 			echo hwe-5.4
@@ -96,12 +96,8 @@ function choose_kernel_branch {
 			exit 1
 			;;
 		esac
-	else
-		if [ "$2" != "focal" ]; 				# Ubuntu 20
-		then
-			echo -e "\e[31mUnsupported distribution $2, kernel version $1 . The patches are maintained for Ubuntu 16/18/20 LTS\e[0m" >&2
-			exit 1
-		fi
+	elif [ "$2" == "focal" ]; 				# Ubuntu 20
+	then
 		case "${kernel_version[0]}.${kernel_version[1]}" in
 		"5.4")									# kernel 5.4
 			echo master
@@ -112,12 +108,34 @@ function choose_kernel_branch {
 		"5.11")									# kernel 5.11
 			echo hwe-5.11
 			;;
+		"5.13")
+			echo hwe-5.13
+			;;
+		"5.15")
+			echo hwe-5.15
+			;;
 		*)
 			#error message shall be redirected to stderr to be printed properly
 			echo -e "\e[31mUnsupported kernel version $1 . The Focal patches are maintained for Ubuntu LTS with kernel 5.4, 5.8, 5.11 only\e[0m" >&2
 			exit 1
 			;;
 		esac
+	elif [ "$2" == "jammy" ]; 				# Ubuntu 22
+	then
+		case "${kernel_version[0]}.${kernel_version[1]}" in
+		"5.15")
+			echo master-next
+			;;
+		*)
+			#error message shall be redirected to stderr to be printed properly
+			echo -e "\e[31mUnsupported kernel version $1 . The Focal patches are maintained for Ubuntu LTS with kernel 5.4, 5.8, 5.11 only\e[0m" >&2
+			exit 1
+			;;
+		esac
+
+	else
+		echo -e "\e[31mUnsupported distribution $2, kernel version $1 . The patches are maintained for Ubuntu 16/18/20 LTS\e[0m" >&2
+		exit 1
 	fi
 }
 
