@@ -3,7 +3,7 @@ Ref: https://dev.intelrealsense.com/docs/compiling-librealsense-for-linux-ubuntu
 
 1. sudo apt-get update
 2. sudo apt install cmake
-3. sudo apt-get install git libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev
+3. sudo apt-get install git libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev build-essential
 4. sudo apt-get install libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev
 
 5.1 git clone https://github.com/owin1022/Altek_3D_Camera
