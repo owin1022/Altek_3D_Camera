@@ -1,0 +1,58 @@
+
+1. Using Raspberry Imager to flash new Image. (imager.png)
+2. Currently, we use Linux raspberrypi 5.10.103-v8+ (uname_lsb_release.png)
+
+3. Build altek al3d SDK:
+
+	3.1 sudo apt-get update && sudo apt-get dist-upgrade
+	
+	3.2 sudo apt-get install automake libtool vim cmake libusb-1.0-0-dev libx11-dev xorg-dev libglu1-mesa-dev
+	
+	3.3 sudo raspi-config
+		Expand the filesystem by selecting the Advanced Options menu entry, and select yes to rebooting:
+	
+	3.4 Increasing swap to 2048:
+		sudo vim /etc/dphys-swapfile
+		modify #CONF_SWAPSIZE=100 to CONF_SWAPSIZE=2048
+		sudo /etc/init.d/dphys-swapfile restart swapon -s
+	
+	3.5 sudo reboot 
+		after reboot, please using htop to check the swap size
+	
+	3.6 build and install openssl:
+		
+        sudo apt-get install libssl-dev
+	
+		
+	3.8 download al3d sdk v61 from https://github.com/owin1022/Altek_3D_Camera/releases
+	
+	3.9 unzip Altek_3D_Camera-61.zip
+
+	3.10 install udev rules: 
+	
+		cd ~/Altek_3D_Camera-61
+		sudo cp config/99-realsense-libusb.rules /etc/udev/rules.d/ 
+		sudo su
+		udevadm control --reload-rules && udevadm trigger
+		exit
+		sudo reboot 
+	
+	3.11 Modify the path by adding the following line to the .bashrc file:
+			export LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:$LD_LIBRARY_PATH
+		Apply the change:
+			source ~/.bashrc
+
+
+	3.12 start to build al3d sdk
+	        
+		cd ~/Altek_3D_Camera-61
+		mkdir build
+		cd build
+		cmake ../
+		make -j2
+		
+		sudo make install
+	
+
+
+
