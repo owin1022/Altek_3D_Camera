@@ -345,6 +345,8 @@ int main(int argc, char** argv) try
                 d.as<rs2::updatable>().update_unsigned(fw_image, [&](const float progress) {}, AL3D_UNSIGNED_UPDATE_MODE_FULL); //for al3d fw update
 
             std::cout << std::endl << std::endl << "al3d firmware update done" << std::endl;
+
+			done = true;
         }
         else
         {
@@ -418,8 +420,16 @@ int main(int argc, char** argv) try
             if (serial_number_arg.isSet() && sn != selected_serial_number)
                 continue;
 
-            auto fw = d.supports(RS2_CAMERA_INFO_FIRMWARE_VERSION) ? d.get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION) : "unknown";
-            std::cout << std::endl << "device " << sn << " successfully updated to FW: " << fw << std::endl;
+			if (al3d_device)  //for al3d fw_update
+			{
+				auto fw = d.supports(RS2_CAMERA_INFO_RECOMMENDED_FIRMWARE_VERSION) ? d.get_info(RS2_CAMERA_INFO_RECOMMENDED_FIRMWARE_VERSION) : "unknown";
+	            std::cout << std::endl << "device " << sn << " successfully updated to FW: " << fw << std::endl;
+			}
+			else
+			{
+	            auto fw = d.supports(RS2_CAMERA_INFO_FIRMWARE_VERSION) ? d.get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION) : "unknown";
+	            std::cout << std::endl << "device " << sn << " successfully updated to FW: " << fw << std::endl;
+			}
         }
     }
 

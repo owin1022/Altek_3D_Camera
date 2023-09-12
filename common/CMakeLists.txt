@@ -36,6 +36,8 @@ set(COMMON_SRC
         "${CMAKE_CURRENT_LIST_DIR}/decompress-huffman.h"
         "${CMAKE_CURRENT_LIST_DIR}/updates-model.h"
         "${CMAKE_CURRENT_LIST_DIR}/updates-model.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/al-utilities.h"
+        "${CMAKE_CURRENT_LIST_DIR}/al-utilities.cpp"		
         )
 
     set(SW_UPDATE_FILES
