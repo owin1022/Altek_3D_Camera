@@ -5,7 +5,10 @@ cmake_minimum_required(VERSION 3.1.0)
 
 project(AlTest)
 
+if (BUILD_CV_EXAMPLES)
 find_package(OpenCV REQUIRED)
+endif()
+
 add_executable(al-test al-test.cpp ../example.hpp ../../third-party/imgui/imgui.cpp ../../third-party/imgui/imgui_draw.cpp ../../third-party/imgui/imgui_impl_glfw.cpp)
 set_property(TARGET al-test PROPERTY CXX_STANDARD 11)
 target_link_libraries(al-test ${DEPENDENCIES} ${OpenCV_LIBS} realsense2-gl )
