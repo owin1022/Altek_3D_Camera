@@ -43,6 +43,8 @@ namespace librealsense
                                                  // if true, this will force any queue receiving this frame not to drop it
         float               depth_units = 0.0f; // adding depth units to frame metadata is a temporary solution, it will be replaced by FW metadata
         uint32_t            raw_size = 0;   // The frame transmitted size (payload only)
+        
+        std::array<uint8_t, 1016> al3d_ai_results; //al3d ai results
 
         frame_additional_data() {}
 
@@ -133,6 +135,8 @@ namespace librealsense
         bool supports_frame_metadata(const rs2_frame_metadata_value& frame_metadata) const override;
         int get_frame_data_size() const override;
         const byte* get_frame_data() const override;
+        //for al3d ai
+        const byte* get_al3d_ai_results() const override;
         rs2_time_t get_frame_timestamp() const override;
         rs2_timestamp_domain get_frame_timestamp_domain() const override;
         void set_timestamp(double new_ts) override { additional_data.timestamp = new_ts; }
@@ -245,6 +249,12 @@ namespace librealsense
         {
             return first()->get_frame_data();
         }
+        //for al3d ai
+        const byte* get_al3d_ai_results() const override
+        {
+            return first()->get_al3d_ai_results();
+        }
+
         rs2_time_t get_frame_timestamp() const override
         {
             return first()->get_frame_timestamp();

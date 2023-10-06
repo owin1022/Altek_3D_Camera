@@ -550,6 +550,15 @@ namespace rs2
             return r;
         }
 
+        //for al3d ai
+        const void* get_al3d_ai_results() const
+        {
+            rs2_error* e = nullptr;
+            auto r = rs2_get_al3d_ai_results(frame_ref, &e);
+            error::handle(e);
+            return r;
+        }
+
         /**
         * retrieve stream profile from frame handle
         * \return  stream_profile - the pointer to the stream profile

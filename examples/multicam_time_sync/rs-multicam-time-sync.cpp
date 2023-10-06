@@ -7,6 +7,12 @@
 #include <map>
 #include <vector>
 
+#define WIDTH           640               // Defines the number of columns for each frame                         //
+#define HEIGHT          360               // Defines the number of lines for each frame                           //
+#define FPS             30                // Defines the rate of frames per second                                //
+#define STREAM_INDEX    0                 // Defines the stream index, used for multiple streams of the same type //
+
+
 int main(int argc, char * argv[]) try
 {
     // Create a simple OpenGL window for rendering:
@@ -30,9 +36,11 @@ int main(int argc, char * argv[]) try
         rs2::config cfg;
         cfg.enable_device(serial);
         #if 1 //ggkk
-        cfg.enable_stream(RS2_STREAM_DEPTH);
-        cfg.disable_stream(RS2_STREAM_COLOR);
-        #endif
+
+        cfg.enable_stream(RS2_STREAM_DEPTH, WIDTH, HEIGHT, RS2_FORMAT_Z16, FPS);
+        //cfg.enable_stream(RS2_STREAM_COLOR, WIDTH, HEIGHT, RS2_FORMAT_RGB8, FPS);
+        
+		#endif
 
         pipe.start(cfg);
         pipelines.emplace_back(pipe);
@@ -80,7 +88,7 @@ int main(int argc, char * argv[]) try
 
             if(frame.get_profile().stream_type() == RS2_STREAM_DEPTH)
             {
-                printf("SN: %s, Depth frame No: %llu, sensor_timestamp: %lld\n", serial, frame_number, sensor_timestamp_pts);
+                printf("SN: %s, Depth frame No: %llu, sensor_timestamp: %lld,timestamp: %f\n", serial, frame_number, sensor_timestamp_pts,frame_timestamp);
             }
             else if(frame.get_profile().stream_type() == RS2_STREAM_COLOR)
             {
@@ -88,6 +96,7 @@ int main(int argc, char * argv[]) try
             }
                 
         }
+        printf("---------------next poll_for_frames---------------------------\n");
         #if 0 //ggkk
         // Present all the collected frames with openGl mosaic
         app.show(render_frames);

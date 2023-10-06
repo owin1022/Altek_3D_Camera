@@ -235,7 +235,8 @@ namespace librealsense
             RECPARAMSGET    = 0x7E,     // Retrieve depth calibration table in new format (fw >= 5.11.12.100)
             LASERONCONST    = 0x7F,     // Enable Laser On constantly (GS SKU Only)
             AUTO_CALIB      = 0x80,     // auto calibration commands
-            SET_AL3D_PARAM  = 0xC0      // al3d commands
+            SET_AL3D_PARAM  = 0xC0,     // al3d commands
+            AL3D_AI_CMD     = 0xC1      // al3d ai commands
         };
 
         #define TOSTRING(arg) #arg

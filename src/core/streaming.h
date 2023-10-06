@@ -86,6 +86,8 @@ namespace librealsense
         virtual bool supports_frame_metadata(const rs2_frame_metadata_value& frame_metadata) const = 0;
         virtual int get_frame_data_size() const = 0;
         virtual const byte* get_frame_data() const = 0;
+        //for al3d ai
+        virtual const byte* get_al3d_ai_results() const = 0;
         virtual rs2_time_t get_frame_timestamp() const = 0;
         virtual rs2_timestamp_domain get_frame_timestamp_domain() const = 0;
         virtual void set_timestamp(double new_ts) = 0;

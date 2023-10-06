@@ -121,6 +121,8 @@ extern "C" {
 		RS2_OPTION_SET_DEPTH_MASK,
 		RS2_OPTION_SET_DEPTH_NEAR_FEIELD,	
 		RS2_OPTION_SET_DEPTH_MASK_VERTICAL,
+        RS2_OPTION_AL3D_AI_Enable,  /** for al3d ai */
+        RS2_OPTION_AL3D_AI_Mode,	/** for al3d ai */
         RS2_OPTION_COUNT /**< Number of enumeration values. Not a valid input: intended to be used in for-loops. */
     } rs2_option;
 

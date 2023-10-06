@@ -31,4 +31,6 @@ target_sources(${LRS_TARGET}
         "${CMAKE_CURRENT_LIST_DIR}/advanced_mode/presets.h"
         "${CMAKE_CURRENT_LIST_DIR}/ds5-auto-calibration.h"
         "${CMAKE_CURRENT_LIST_DIR}/ds5-thermal-monitor.h"
+        "${CMAKE_CURRENT_LIST_DIR}/al3d-ai.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/al3d-ai.h"
 )

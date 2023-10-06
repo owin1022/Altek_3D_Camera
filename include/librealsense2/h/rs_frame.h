@@ -147,6 +147,12 @@ int rs2_get_frame_data_size(const rs2_frame* frame, rs2_error** error);
 const void* rs2_get_frame_data(const rs2_frame* frame, rs2_error** error);
 
 /**
+al3d ai
+*/
+const void* rs2_get_al3d_ai_results(const rs2_frame* frame, rs2_error** error);
+
+
+/**
 * retrieve frame width in pixels
 * \param[in] frame      handle returned from a callback
 * \param[out] error     if non-null, receives any error that occurs during this call, otherwise, errors are ignored

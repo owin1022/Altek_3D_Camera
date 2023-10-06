@@ -62,6 +62,10 @@ namespace librealsense
         rs2_intrinsics get_intrinsics(const stream_profile& profile) const override;
         stream_profiles init_stream_profiles() override;
         processing_blocks get_recommended_processing_blocks() const override;
+        void open(const stream_profiles& requests) override;
+        void close() override;
+        //for al3d ai
+        void set_frame_metadata_modifier(on_frame_md callback);
 
     protected:
         const ds5_color* _owner;

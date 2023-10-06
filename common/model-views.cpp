@@ -131,6 +131,18 @@ struct attribute
     std::string description;
 };
 
+//for al3d ai
+struct _ALTEK_AI_BOX_INFO_
+{
+    unsigned short m_u16Box_ID;
+    unsigned short m_u16Box_Left;
+    unsigned short m_u16Box_Top;
+    unsigned short m_u16Box_Right;
+    unsigned short m_u16Box_Bottom;
+    unsigned short m_u16Box_Distance;
+    float m_f32Box_Degree;
+};
+
 namespace rs2
 {
     template <typename T>
@@ -2348,6 +2360,7 @@ namespace rs2
 	        timestamp = sensor_timestamp_pts;
             fps.add_timestamp(timestamp / 1000, f.get_frame_number());
 			#else  //please using FW version 0.0.2.83
+            
             timestamp = f.get_timestamp();
             fps.add_timestamp(timestamp, f.get_frame_number());
             auto now_duration = std::chrono::system_clock::now().time_since_epoch();
@@ -2358,6 +2371,61 @@ namespace rs2
             //std::string msg2 = to_string() << "frame ts: " << std::setprecision(14) << std::fixed << timestamp;
             //rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
 
+            //for al3d ai
+            #if 1 //for debug ai result
+            auto show_ai_result = 0;
+            std::string pid = dev->dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
+            if (dev->s->supports(RS2_OPTION_AL3D_AI_Enable)) 
+            {
+                if (dev->s->get_option(RS2_OPTION_AL3D_AI_Enable)&& ((pid == "99AA") || (pid == "99BB")) && (f.get_profile().stream_type() == RS2_STREAM_COLOR))
+                    show_ai_result = 1;
+            }
+          
+            if (show_ai_result)
+            {
+              
+                auto ai_results_ptr = f.get_al3d_ai_results();
+                char ai_results_data[1016];
+                memcpy(&ai_results_data[0], (char*)ai_results_ptr, 1016);
+                unsigned long m_u16TotalBytes = (unsigned long)ai_results_data[0];
+                unsigned long m_u16AI_BOX_Number = (unsigned long)ai_results_data[4];
+                unsigned long long  m_u64PTS = (unsigned long long)ai_results_data[8];
+                char* ai_box_info_start = &ai_results_data[16];
+                auto ai_duration = std::chrono::system_clock::now().time_since_epoch().count();
+                if (m_u16TotalBytes > 0 && m_u16AI_BOX_Number > 0)
+                {
+                    //std::string msg = to_string() << " m_u64PTS: " << std::to_string(m_u64PTS) << " m_u16TotalBytes: " << std::to_string(m_u16TotalBytes) << " m_u16AI_BOX_Number: " << std::to_string(m_u16AI_BOX_Number);
+                    //rs2::log(RS2_LOG_SEVERITY_INFO, msg.c_str());
+
+                    for (int i = 0; i < m_u16AI_BOX_Number; i++)
+                    {
+
+                        struct _ALTEK_AI_BOX_INFO_ box_info;
+                        memcpy((char*)&box_info.m_u16Box_ID, ai_box_info_start, sizeof(box_info));
+                        unsigned short m_u16Box_ID = box_info.m_u16Box_ID;
+                        unsigned short m_u16Box_Left = box_info.m_u16Box_Left;
+                        unsigned short m_u16Box_Top = box_info.m_u16Box_Top;
+                        unsigned short m_u16Box_Right = box_info.m_u16Box_Right;
+                        unsigned short m_u16Box_Bottom = box_info.m_u16Box_Bottom;
+                        unsigned short m_u16Box_Distance = box_info.m_u16Box_Distance;
+                        float  m_f32Box_Degree = box_info.m_f32Box_Degree;
+
+                        std::string msg2 = to_string() << "   box_" << std::to_string(i) << "("
+                            << std::to_string(m_u16Box_ID) << ","
+                            << std::to_string(m_u16Box_Left) << ","
+                            << std::to_string(m_u16Box_Top) << ","
+                            << std::to_string(m_u16Box_Right) << ","
+                            << std::to_string(m_u16Box_Bottom) << ","
+                            << std::to_string(m_u16Box_Distance) << ","
+                            << std::to_string(m_f32Box_Degree) << ")";
+
+                        ai_box_info_start = ai_box_info_start + 16;
+                        rs2::log(RS2_LOG_SEVERITY_INFO, msg2.c_str());
+                    }
+
+                }
+            }
+            #endif
 		}
 		
         view_fps.add_timestamp(glfwGetTime() * 1000, count++);
@@ -7106,7 +7174,9 @@ namespace rs2
                             RS2_OPTION_SATURATION,
                             RS2_OPTION_SHARPNESS,
                             RS2_OPTION_ENABLE_AUTO_WHITE_BALANCE,
-                            RS2_OPTION_WHITE_BALANCE
+                            RS2_OPTION_WHITE_BALANCE,
+                            RS2_OPTION_AL3D_AI_Enable ,
+                            RS2_OPTION_AL3D_AI_Mode
                         };
 
                         std::vector<rs2_option> so_ordered;

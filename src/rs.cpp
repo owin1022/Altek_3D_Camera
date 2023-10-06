@@ -946,6 +946,16 @@ const void* rs2_get_frame_data(const rs2_frame* frame_ref, rs2_error** error) BE
 }
 HANDLE_EXCEPTIONS_AND_RETURN(nullptr, frame_ref)
 
+
+//for al3d ai
+const void* rs2_get_al3d_ai_results(const rs2_frame* frame_ref, rs2_error** error) BEGIN_API_CALL
+{
+    VALIDATE_NOT_NULL(frame_ref);
+    return ((frame_interface*)frame_ref)->get_al3d_ai_results();
+}
+HANDLE_EXCEPTIONS_AND_RETURN(nullptr, frame_ref)
+
+
 int rs2_get_frame_width(const rs2_frame* frame_ref, rs2_error** error) BEGIN_API_CALL
 {
     VALIDATE_NOT_NULL(frame_ref);

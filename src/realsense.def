@@ -74,6 +74,7 @@ EXPORTS
     rs2_get_frame_number
     rs2_get_frame_data_size
     rs2_get_frame_data
+    rs2_get_al3d_ai_results
     rs2_get_frame_width
     rs2_get_frame_height
     rs2_get_frame_stride_in_bytes
