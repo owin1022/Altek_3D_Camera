@@ -461,4 +461,31 @@ namespace librealsense
     };
    
 
+    
+    class al3d_ai_cmd_option : public option_base
+    {
+    public:
+        al3d_ai_cmd_option(hw_monitor& hwm, sensor_base* depth_ep, option_range range, rs2_option opt, uint8_t read_opt, std::string name);
+        virtual ~al3d_ai_cmd_option() = default;
+        virtual void set(float value) override;
+        virtual float query() const override;
+        virtual option_range get_range() const override;
+        virtual bool is_enabled() const override { return true; }
+        virtual bool is_read_only() const override;
+        virtual const char* get_description() const override;
+        virtual void enable_recording(std::function<void(const option&)> record_action) override { _record_action = record_action; }
+    private:
+        std::function<void(const option&)> _record_action = [](const option&) {};
+        lazy<option_range> _range;
+        hw_monitor& _hwm;
+        sensor_base* _sensor;
+        rs2_option     _opt_id;
+        uint32_t _value;
+        std::string _name;
+        uint8_t _read_opt;
+       
+    };
+
+
+
 }

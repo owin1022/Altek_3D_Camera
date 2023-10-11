@@ -446,6 +446,8 @@ namespace librealsense
             CASE(TRANSMITTER_FREQUENCY)
             CASE(VERTICAL_BINNING)
             CASE(RECEIVER_SENSITIVITY)
+            case RS2_OPTION_AL3D_AI_Enable: return "altek Enable AI";  //al3d ai
+            case RS2_OPTION_AL3D_AI_Mode: return "altek AI Mode";  //al3d ai
             case RS2_OPTION_SYNC_PTS_TIME: return "Camera PTS Time";  //al3d
             CASE(SET_AE_TARGET)
             CASE(SET_MAX_EXPOSURE_TIME)

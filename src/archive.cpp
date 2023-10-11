@@ -284,6 +284,15 @@ namespace librealsense
 
         return frame_data;
     }
+    
+    //for al3d ai
+    const byte* frame::get_al3d_ai_results() const
+    {
+        const byte* result_data = additional_data.al3d_ai_results.data();
+        return result_data;
+    }
+
+
 
     rs2_timestamp_domain frame::get_frame_timestamp_domain() const
     {

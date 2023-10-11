@@ -4,6 +4,7 @@
 
 #include "ds5/ds5-thermal-monitor.h"
 #include "ds5-options.h"
+#include "al3d-ai.h"
 
 namespace librealsense
 {
@@ -1036,4 +1037,101 @@ namespace librealsense
 	{
 		return _name.data();
 	}
+
+
+   
+    
+    //------------------ for al3d_ai_cmd -------------------------
+    al3d_ai_cmd_option::al3d_ai_cmd_option(hw_monitor& hwm, sensor_base* depth_ep, option_range range, rs2_option opt, uint8_t read_opt, std::string name)
+        : option_base(range), 
+          _hwm(hwm), 
+          _sensor(depth_ep), 
+          _opt_id(opt), 
+          _read_opt(read_opt)
+    {
+        _name = name;
+
+        _range = [range]()
+        {
+            return range;
+        };
+
+        _value = (uint32_t)_range->def;
+    }
+
+
+    void al3d_ai_cmd_option::set(float value)
+    {
+        if (!is_valid(value))
+            throw invalid_value_exception("set(al3d ai option) failed! " + std::to_string(value));
+
+        if (is_read_only())
+            return;
+
+        int p1 = _opt_id;
+        int p2 = al3d_ai_cmd_Set;
+        int p3 = (uint32_t)value;
+        int p4 = 0;
+
+        command cmd(ds::fw_cmd::AL3D_AI_CMD, p1, p2, p3, p4);
+        
+        _hwm.send(cmd);
+        _value = (uint32_t)value;
+
+    }
+
+    float al3d_ai_cmd_option::query() const
+    {
+        uint32_t value = 0;
+
+        int p1 = _opt_id;
+        int p2 = al3d_ai_cmd_Get;
+        int p3 = 0;
+        int p4 = 0;
+
+        command cmd(ds::fw_cmd::AL3D_AI_CMD, p1, p2, p3, p4);
+        std::vector<uint8_t> data;
+
+        data = _hwm.send(cmd);
+
+        //if (data.empty())
+        //    throw invalid_value_exception("al3d_depth_cmd_option::query result is empty!");
+        if (data.empty())
+            return 0;
+
+
+        memcpy((void*)&value, &data[0], sizeof(value));
+
+        return static_cast<float>(value);
+    }
+        
+    option_range al3d_ai_cmd_option::get_range() const
+    {
+        return *_range;
+    }
+
+    bool al3d_ai_cmd_option::is_read_only() const
+    {
+        if (_read_opt == 1)
+        {
+            return true;
+        }
+        else if (_read_opt == 2)
+        {
+            return _sensor && _sensor->is_opened();
+        }
+
+        return false;
+    }
+
+    const char* al3d_ai_cmd_option::get_description() const
+    {
+        return _name.data();
+    }
+
+
+
+    //------------------ end for al3d_ai_cmd -------------------------
+   
+
 }

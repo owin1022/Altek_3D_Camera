@@ -305,6 +305,29 @@ namespace librealsense
         } 
 
 
+
+        //for al3d ai, fw must >= 0.0.2.98
+        if ((_pid == ds::AL3D_PID) || (_pid == ds::AL3Di_PID))
+        {
+            if (_recommended_fw_version >= firmware_version("0.0.2.98"))
+            {
+                rs2_option al_opt2 = (rs2_option)al3d_ai_cmd_AI_Enable;
+                option_range range_tmp = { 0.0,1.0,1.0,0.0 };
+                _al3d_ai_option_enable = std::make_shared<al3d_ai_cmd_option>(*_hw_monitor, &color_ep, range_tmp, al_opt2, 2, "enable al3d ai or not");
+                color_ep.register_option(RS2_OPTION_AL3D_AI_Enable, _al3d_ai_option_enable);
+                _al3d_ai_option_enable->query();
+
+                rs2_option al_opt3 = (rs2_option)al3d_ai_cmd_AI_Mode;
+                option_range range_tmp2 = { 0.0,10.0,1.0,0.0 };
+                _al3d_ai_option_mode = std::make_shared<al3d_ai_cmd_option>(*_hw_monitor, &color_ep, range_tmp2, al_opt3, 2, "al3d ai mode (TBD)");
+                color_ep.register_option(RS2_OPTION_AL3D_AI_Mode, _al3d_ai_option_mode);
+                _al3d_ai_option_mode->query();
+
+                _al3d_ai_monitor = std::make_shared<al3d_ai_monitor>(_al3d_ai_option_enable, _al3d_ai_option_mode, *_hw_monitor);
+            }
+        }
+        
+
     }
 
     rs2_intrinsics ds5_color_sensor::get_intrinsics(const stream_profile& profile) const
@@ -364,4 +387,55 @@ namespace librealsense
     {
         return get_color_recommended_proccesing_blocks();
     }
+    
+    //for al3d ai
+    void ds5_color_sensor::set_frame_metadata_modifier(on_frame_md callback) 
+    {
+        _metadata_modifier = callback;
+        auto s = get_raw_sensor().get();
+        auto uvc = As< librealsense::uvc_sensor >(s);
+        if (uvc)
+            uvc->set_frame_metadata_modifier(callback);
+    }
+
+    void  ds5_color_sensor::open(const stream_profiles& requests) 
+    {
+       
+        //for al3d ai
+        if ((_owner->_pid == ds::AL3D_PID) || (_owner->_pid == ds::AL3Di_PID))
+        {
+            if (_owner->_recommended_fw_version >= firmware_version("0.0.2.98"))
+            {
+                for (auto&& r : requests)
+                {
+                    auto p = to_profile(r.get());
+                    _owner->_al3d_ai_monitor->set_polling_interval_ms(1000 / p.fps);
+                }
+                _owner->_al3d_ai_monitor->update(true);
+
+                set_frame_metadata_modifier([&](frame_additional_data& data) {
+                    _owner->_al3d_ai_monitor->append_result((char*)&data.al3d_ai_results[0]);
+
+                    }
+                );
+            }
+        }
+ 
+        synthetic_sensor::open(requests);
+
+    }
+
+    void  ds5_color_sensor::close() 
+    {
+        synthetic_sensor::close();
+        if ((_owner->_pid == ds::AL3D_PID) || (_owner->_pid == ds::AL3Di_PID))
+        {
+            if (_owner->_recommended_fw_version >= firmware_version("0.0.2.98"))
+            {
+                _owner->_al3d_ai_monitor->update(false);
+            }
+        }
+       
+    }
+
 }

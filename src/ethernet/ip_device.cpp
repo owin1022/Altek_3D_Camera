@@ -382,7 +382,8 @@ void ip_device::inject_frames_loop(std::shared_ptr<rs_rtp_stream> rtp_stream)
                 rtp_stream.get()->frame_data_buff.domain = frame->m_metadata->data.timestampDomain;
 
 				float updated_value = 0;
-				get_option_value(sensor_id, RS2_OPTION_DEPTH_UNITS, updated_value);
+                if (sensor_id != 1) //color, do not get depth unit
+                    get_option_value(sensor_id, RS2_OPTION_DEPTH_UNITS, updated_value);
 				rtp_stream.get()->frame_data_buff.depth_units = updated_value;
 
                 remote_sensors[sensor_id]->sw_sensor->set_metadata(RS2_FRAME_METADATA_FRAME_TIMESTAMP, rtp_stream.get()->frame_data_buff.timestamp);
