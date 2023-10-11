@@ -151,7 +151,7 @@ int main(int argc, char * argv[]) try
     {
         sensor.set_option(RS2_OPTION_VISUAL_PRESET, RS2_RS400_VISUAL_PRESET_HIGH_ACCURACY);
     }
-
+ 
     auto stream = profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
 
     // Create a simple OpenGL window for rendering:
