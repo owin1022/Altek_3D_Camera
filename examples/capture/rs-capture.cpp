@@ -20,52 +20,19 @@ int main(int argc, char * argv[]) try
     // Declare RealSense pipeline, encapsulating the actual device and sensors
     rs2::pipeline pipe;
 
-    auto profile = pipe.start();
-
-    // Declare filters
-    rs2::decimation_filter dec_filter;
-    rs2::spatial_filter spat_filter;
-    // Configure filter parameters
-    dec_filter.set_option(RS2_OPTION_FILTER_MAGNITUDE, 3);
-
-    spat_filter.set_option(RS2_OPTION_FILTER_SMOOTH_ALPHA, 1);
-    spat_filter.set_option(RS2_OPTION_FILTER_SMOOTH_DELTA, 0);
-
-    rs2::threshold_filter thr_filter(0.0f, 0.5f);
-
-    //depth_frame = thr_filter.process(depth_frame);
-
-    //thr_filter.set_option(RS2_OPTION_MIN_DISTANCE, 0.0f);
-    //thr_filter.set_option(RS2_OPTION_MAX_DISTANCE, 0.5f);
-
-    /*rs2::threshold_filter tf(0.0f, 0.5f); 
-    rs2::rates_printer printer; 
-    apply_filter(tf)pipe.wait_for_frames()*/
+    // Start streaming with default recommended configuration
+    // The default video configuration contains Depth and Color streams
+    // If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
+    pipe.start();
 
     while (app) // Application still alive?
     {
         rs2::frameset data = pipe.wait_for_frames().    // Wait for next set of frames from the camera
                              apply_filter(printer).     // Print each enabled stream frame rate
-                             apply_filter(color_map).   // Find and colorize the depth data
-                             apply_filter(thr_filter).
-                             apply_filter(spat_filter);
+                             apply_filter(color_map);   // Find and colorize the depth data
 
-        rs2::frame depth_frame = data.get_depth_frame();
-
-        rs2::frame filtered = depth_frame;
-        // Note the concatenation of output/input frame to build up a chain
-        filtered = dec_filter.process(filtered);
-        filtered = spat_filter.process(filtered);
-
-        //depth_frame.apply_filter(color_map).apply_filter(dec_filter).apply_filter(spat_filter);
-        //emit newImage(frameToQImage(depth_frame.apply_filter(color_map).apply_filter(dec_filter).apply_filter(spat_filter)));
         // The show method, when applied on frameset, break it to frames and upload each frame into a gl textures
         // Each texture is displayed on different viewport according to it's stream unique id
-
-        //data.apply_filter(spat_filter);
-        //auto colorized_depth = np.asanyarray(colorizer.colorize(filtered_depth).get_data());
-        //cv2.imshow("filtered1 depth", colorized_depth);
-        
         app.show(data);
     }
 

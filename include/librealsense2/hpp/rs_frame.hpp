@@ -449,7 +449,7 @@ namespace rs2
             error::handle(e);
             return r;
         }
-        
+
         /**
         * retrieve the time at which the frame was captured
         * During the frame's lifetime it receives timestamps both at the device and host levels.

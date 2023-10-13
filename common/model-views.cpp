@@ -2790,13 +2790,8 @@ namespace rs2
 			if(RS2_STREAM_INFRARED == profile.stream_type())
 			{
 				auto dev_index =  profile.stream_index();
-                if (dev_index == 1)
-                    stream_name = "Main";
-                else
-                    stream_name = "Sub";
-				//stream_name =  to_string() << stream_name << " " << dev_index;	
+				stream_name =  to_string() << stream_name << " " << dev_index;	
 			}
-            
 
 			
             tooltip = to_string() << dev_name << " s.n:" << dev_serial << " | " << sensor_name << ", " << stream_name << " stream";
