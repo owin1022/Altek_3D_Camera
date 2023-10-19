@@ -40,7 +40,7 @@ Prerequisites:
   ###### Use automation script:
   - Launch Windows `Powershell` tool as *_Admin_* and navigate to the script directory
   - Run the following:  
-    `PS > .\realsense_metadata_win10.ps1 <optional:operation>`  
+    `PS > .\al3d_metadata_win10.ps1 <optional:operation>`  
     The supported parameters are
     - `-op install` adds registry keys for connected Intel Realsense devices
     - `-op install_all` adds keys for all RealSense devices logged in the registry
