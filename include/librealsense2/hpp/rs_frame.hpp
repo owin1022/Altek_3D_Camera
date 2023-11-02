@@ -113,8 +113,20 @@ namespace rs2
         std::string stream_name() const
         {
             std::stringstream ss;
-            ss << rs2_stream_to_string(stream_type());
-            if (stream_index() != 0) ss << " " << stream_index();
+            switch (stream_index())
+            {
+            case 0:
+                ss << rs2_stream_to_string(stream_type());
+                break;
+            case 1:
+                ss << "Main";
+                break;
+            case 2:
+                ss << "Sub";
+                break;
+            default:
+                break;
+            }
             return ss.str();
         }
 
