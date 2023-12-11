@@ -1428,9 +1428,9 @@ namespace librealsense
 
 		if ((_pid == AL3D_PID) || (_pid == AL3Di_PID))
 		{
-			if (_al3d_fw_version >= firmware_version("0.0.1.286"))
+			if (_al3d_fw_version >= firmware_version("0.0.2.106"))
 			{
-				char ver[4] = { '\0' };
+				char ver[5] = { '\0' };
 				
 				bool ret = set_al3d_param(503, 0xff, 0xff, 0xff);
 
