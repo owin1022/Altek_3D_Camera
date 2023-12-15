@@ -457,6 +457,7 @@ namespace librealsense
             }
             case AL3D_UNSIGNED_UPDATE_MODE_FULL:   //al3d fw_update
             {
+				_is_al3d_fw_update_start = true;
                 al3d_fw_update_start(image, callback, update_mode);
                 break;
             }
@@ -1559,16 +1560,19 @@ namespace librealsense
 		{		
 		   	if (_al3d_fw_version >= firmware_version("0.0.1.261"))
 			{
-				auto& raw_depth_sensor =  get_raw_depth_sensor();
-				auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
-				
-				try
+				if(!_is_al3d_fw_update_start)
 				{
-					al3d_device_xu_cmd->get_PTS_Time(&err_code_0, &err_code_1);
-				}
-				catch (...)
-				{
-				
+					auto& raw_depth_sensor =  get_raw_depth_sensor();
+					auto al3d_device_xu_cmd = std::make_shared<al3d_device_xu_option>(raw_depth_sensor);
+					
+					try
+					{
+						al3d_device_xu_cmd->get_PTS_Time(&err_code_0, &err_code_1);
+					}
+					catch (...)
+					{
+					
+					}
 				}
 			}
 		}

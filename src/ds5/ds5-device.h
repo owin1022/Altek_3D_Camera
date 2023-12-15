@@ -124,6 +124,7 @@ namespace librealsense
         std::shared_ptr<lazy<rs2_extrinsics>> _color_extrinsic;
         bool _is_locked = true;
 		std::vector<uint8_t> _al3d_ret;
+		bool _is_al3d_fw_update_start = false;
     };
 
     class ds5u_device : public ds5_device

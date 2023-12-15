@@ -386,18 +386,25 @@ namespace rs2
                 {
                     auto d = devs[j];
 
-                   
- 
                     if (d.query_sensors().size() && d.query_sensors().front().supports(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID))
                     {
                         auto s = d.query_sensors().front().get_info(RS2_CAMERA_INFO_FIRMWARE_UPDATE_ID);
-                        if (s == serial)
-                        {
-                            log("Discovered connection of the original device");
-                            return true;
-                        }
-                    }
 
+						if (s == serial)
+						{
+							log("Discovered connection of the original device");
+							return true;
+						}
+
+						std::string check_zzz_str = serial;
+						std::size_t found = check_zzz_str.find("ZZZZZZZZZZZ");
+
+						if (found != std::string::npos)
+						{
+							log("Discovered connection of the original device");
+							return true;
+						}
+                    }
                 }
                 catch (...) {}
             }
