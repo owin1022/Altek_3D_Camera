@@ -53,5 +53,5 @@ add_subdirectory(ar-advanced)
 add_subdirectory(pose-apriltag)
 add_subdirectory(tracking-and-depth)
 add_subdirectory(hdr)
-add_subdirectory(al-test)
+#add_subdirectory(al-test)
 
