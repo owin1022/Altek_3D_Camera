@@ -1235,9 +1235,16 @@ namespace librealsense
 #endif
 			for (auto&& info : devices)  //for al3d
 			{
-				if((info.pid == ds::AL3D_PID)||(info.pid == ds::AL3Di_PID))
+				if((info.pid == ds::AL3D_PID))
 				{
 					all_sensors_present = true;
+				}
+				else if ((info.pid == ds::AL3Di_PID))
+				{
+					if (is_device_hid_sensor && hids.size() >= 2)
+					{
+						all_sensors_present = true;
+					}
 				}
 			}
 

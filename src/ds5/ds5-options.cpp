@@ -986,7 +986,10 @@ namespace librealsense
 		if (!is_valid(value))
 			throw invalid_value_exception("set(al3d option) failed! " + std::to_string(value));
 
-		_value = (uint32_t) value;
+        if (is_read_only())
+            return;
+
+		_value = (int32_t) value;
 		
 		int p1 = _opt_id;
 		int p2 =(_value & 0x00FF0000) >> 16;
@@ -998,9 +1001,9 @@ namespace librealsense
 		_record_action(*this);
 	}
 
-	float al3d_depth_cmd_option::query() const
+float al3d_depth_cmd_option::query() const
 	{
-		uint32_t value = 0;
+		int32_t value;
 		command cmd(ds::fw_cmd::SET_AL3D_PARAM, _opt_id,  0xff, 0x0, 0x0);
 		std::vector<uint8_t> data;
 

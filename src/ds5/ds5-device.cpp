@@ -1342,6 +1342,41 @@ namespace librealsense
 				depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "depth mask - vertical(0 ~ 50 %)"));
 				
 			}
+
+			if (_fw_version >= firmware_version("6.0.0.0"))
+			{
+				bool opt_sp_filter = true;
+				
+				if (_fw_version >= firmware_version("7.0.0.0"))
+				{
+					if (_recommended_fw_version < firmware_version("0.0.2.121"))
+					{ 
+						opt_sp_filter = false;
+					}
+				}
+
+				if(opt_sp_filter)
+				{
+					rs2_option al_opt;
+
+					al_opt = RS2_OPTION_SET_SP_FILTER_FUNC_ENABLE;
+					depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 2, "AL SPFilter, function enable"));
+				
+					al_opt = RS2_OPTION_SET_SP_FILTER_FLOOR_REMOVE;
+					depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "AL SPFilter, floor removr enable"));
+				
+					al_opt = RS2_OPTION_SET_SP_FILTER_HEIGHT;
+					depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "AL SPFilter, hight(um)"));
+				
+					al_opt = RS2_OPTION_SET_SP_FILTER_DEPTH_ANGLE;
+					depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "AL SPFilter, depth angle(0.01 deg)"));
+
+					al_opt = RS2_OPTION_SET_SP_FILTER_CONTURE_MODE;
+					depth_sensor.register_option(al_opt, std::make_shared<al3d_depth_cmd_option>(*_hw_monitor, &depth_sensor, get_depth_option_range(al_opt), al_opt, 0, "AL SPFilter, conture mode enable"));
+				}
+			}
+
+
 		}
         // attributes of md_capture_timing
         auto md_prop_offset = offsetof(metadata_raw, mode) +

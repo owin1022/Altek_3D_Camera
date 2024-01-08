@@ -396,7 +396,7 @@ namespace librealsense
         hw_monitor& _hwm;
         sensor_base* _sensor;
 		rs2_option     _opt_id;
-		uint32_t _value;
+		int32_t _value;
 		std::string _name;
 		uint8_t _read_opt;
     };
