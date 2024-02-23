@@ -36,6 +36,7 @@ namespace librealsense
                 << intrinsics_string(res_424_240)
                 << intrinsics_string(res_640_360)
                 << intrinsics_string(res_320_240)
+                << intrinsics_string(res_320_180)
                 << intrinsics_string(res_480_270)
                 << intrinsics_string(res_1280_800)
                 << intrinsics_string(res_960_540));

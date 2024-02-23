@@ -377,13 +377,12 @@ namespace librealsense
             res_480_270,
             res_1280_800,
             res_960_540,
-            reserved_1,
-            reserved_2,
             res_640_400,
             // Resolutions for DS5U
             res_576_576,
             res_720_720,
             res_1152_1152,
+            res_320_180,
             max_ds5_rect_resolutions
         };
 
@@ -739,6 +738,7 @@ namespace librealsense
             { res_576_576,{ 576, 576 } },
             { res_720_720,{ 720, 720 } },
             { res_1152_1152,{ 1152, 1152 } },
+            { res_320_180,{ 320, 180 } },
         };
 
         static std::map<uint16_t, std::string> device_to_fw_min_version = {
