@@ -247,18 +247,20 @@ namespace librealsense
             float altek_cali_table_width = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_W_Sub;
             float altek_cali_table_height = (float)table->al_cvbin.ucOpenCV_440.m_uwCalib_H_Sub;
 
-            float color_ratio_fx =  ((float)width)/altek_cali_table_width;
-            float color_ratio_fy =  ((float)height)/altek_cali_table_height;
-            float color_ratio_ppx = ((float)width)/altek_cali_table_width;
-            float color_ratio_ppy = ((float)height)/altek_cali_table_height;
-            
+            float altek_cali_height_offset = 80 / 2;  // (cali height- sensor output height)2   -->  (800-720)/2
+
+            float rgb_ratio_fx = ((float)width) / altek_cali_table_width;
+            float rgb_ratio_fy = ((float)height) / (altek_cali_table_height - altek_cali_height_offset * 2);
+            float rgb_ratio_ppx = ((float)width) / altek_cali_table_width;
+            float rgb_ratio_ppy = ((float)height) / (altek_cali_table_height - altek_cali_height_offset * 2);
+
             rs2_intrinsics calc_intrinsic{
                 static_cast<int>(width),
                 static_cast<int>(height),
-                ((float)table->al_cvbin.ucOpenCV_440.m_eux_Sub)*color_ratio_ppx, /*ppx*/
-                ((float)table->al_cvbin.ucOpenCV_440.m_euy_Sub)*color_ratio_ppy, /*ppy*/
-                ((float)table->al_cvbin.ucOpenCV_440.m_efx_Sub)*color_ratio_fx, /*focalx*/
-                ((float)table->al_cvbin.ucOpenCV_440.m_efy_Sub)*color_ratio_fy, /*focaly*/
+                ((float)table->al_cvbin.ucOpenCV_440.m_eux_Sub) * rgb_ratio_ppx, /*ppx*/
+                ((float)table->al_cvbin.ucOpenCV_440.m_euy_Sub) * rgb_ratio_ppy - (altek_cali_height_offset * rgb_ratio_ppy), /*ppy*/
+                ((float)table->al_cvbin.ucOpenCV_440.m_efx_Sub) * rgb_ratio_fx, /*focalx*/
+                ((float)table->al_cvbin.ucOpenCV_440.m_efy_Sub) * rgb_ratio_fy, /*focaly*/
                 RS2_DISTORTION_BROWN_CONRADY   // The coefficients shall be use for undistort
             };
 
@@ -422,7 +424,7 @@ namespace librealsense
             rect_rot_mat.z.z = table->al_cvbin.ucOpenCV_440.m_aeRelativeR_Sub[8];
 
 
-            float trans_scale = -0.001f; // Convert units from mm to meter. Extrinsic of color is referenced to the Depth Sensor CS
+            float trans_scale = 0.001f; // Convert units from mm to meter. Extrinsic of color is referenced to the Depth Sensor CS
 
             trans_vector.x *= trans_scale;
             trans_vector.y *= trans_scale;
@@ -443,7 +445,7 @@ namespace librealsense
             trans_vector.z = 0.000127647654;
             #endif
 
-            return{ rect_rot_mat,trans_vector };
+            return inverse({ rect_rot_mat,trans_vector });
         }
 
         bool try_fetch_usb_device(std::vector<platform::usb_device_info>& devices,

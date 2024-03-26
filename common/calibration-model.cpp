@@ -13,7 +13,7 @@ static void format_al_intrinsic_to_table(const OpenCVK_824bytes* alcvbin,
     librealsense::float3x3* al_extrinsic_rot,
     librealsense::float3* al_extrinsic_trans,
     int is_main,
-    float trans_scale= -0.001f);
+    float trans_scale= 0.001f);
 
 bool calibration_model::supports()
 {
@@ -695,7 +695,7 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
 
                     librealsense::float3x3 al_intrinsic_l;
                     librealsense::float3x3 al_intrinsic_r;
-                    float trans_scale = -0.001f;
+                    float trans_scale = 0.001f;
                     librealsense::float3x3 al_extrinsic_rot_l;
                     librealsense::float3 al_extrinsic_trans_l;
                     librealsense::float3x3 al_extrinsic_rot_r;
@@ -816,7 +816,7 @@ void calibration_model::update_al(ux_window& window, std::string& error_message)
 
         librealsense::float3x3 al_intrinsic_l;
         librealsense::float3x3 al_intrinsic_r;
-        float trans_scale = -0.001f;
+        float trans_scale = 0.001f;
         librealsense::float3x3 al_extrinsic_rot_l;
         librealsense::float3 al_extrinsic_trans_l;
         librealsense::float3x3 al_extrinsic_rot_r;
