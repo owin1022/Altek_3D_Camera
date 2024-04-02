@@ -81,6 +81,7 @@ namespace librealsense
         {
                 command cmd(ds::fw_cmd::AL3D_AI_CMD, al3d_ai_cmd_AI_Result, al3d_ai_cmd_Get, 0x0, 0x0);
                 std::vector<uint8_t> data;
+             
 
                 data = _hwm.send(cmd);
 
@@ -108,11 +109,12 @@ namespace librealsense
     void al3d_ai_monitor::add_new_result(char* new_result)
     {
        
-        
-        unsigned long m_u16TotalBytes = (unsigned long)*(new_result+0);
-        unsigned long m_u16AI_BOX_Number = (unsigned long)*(new_result+4);
+   
+        unsigned int m_u16TotalBytes, m_u16AI_BOX_Number = 0;
+        memcpy(&m_u16TotalBytes, new_result + 0, 4);
+        memcpy(&m_u16AI_BOX_Number, new_result + 4, 4);
+
         if ((m_u16TotalBytes > 0) && (m_u16TotalBytes < 1017) && (m_u16AI_BOX_Number > 0) && (m_u16AI_BOX_Number < 61))
-        
         {
             result_buffer_lock.lock();
             memcpy(&_ai_result_buffer[0], new_result, 1016);

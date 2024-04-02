@@ -124,9 +124,11 @@ int main(int argc, char * argv[]) try
                     auto ai_results_ptr = frameColor.get_al3d_ai_results();
                     char ai_results_data[1016];
                     memcpy(&ai_results_data[0], (char*)ai_results_ptr, 1016);
-                    unsigned long m_u16TotalBytes = (unsigned long)ai_results_data[0];
-                    unsigned long m_u16AI_BOX_Number = (unsigned long)ai_results_data[4];
-                    unsigned long long m_u64PTS = (unsigned long long)ai_results_data[8];
+                    unsigned int m_u16TotalBytes, m_u16AI_BOX_Number, m_u64PTS = 0;
+                    memcpy(&m_u16TotalBytes, &ai_results_data[0], 4);
+                    memcpy(&m_u16AI_BOX_Number, &ai_results_data[4], 4);
+                    memcpy(&m_u64PTS, &ai_results_data[8], 8);
+
                     char* ai_box_info_start = &ai_results_data[16];
                     
                     if (m_u16TotalBytes > 0 && m_u16AI_BOX_Number > 0)
