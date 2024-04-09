@@ -149,6 +149,19 @@ typedef struct rs2_pose
     unsigned int    mapper_confidence;    /**< Pose map confidence 0x0 - Failed, 0x1 - Low, 0x2 - Medium, 0x3 - High                                      */
 } rs2_pose;
 
+typedef struct altek_ai_box_info
+{
+	unsigned short m_u16Box_ID;
+	unsigned short m_u16Box_Left;
+	unsigned short m_u16Box_Top;
+	unsigned short m_u16Box_Right;
+	unsigned short m_u16Box_Bottom;
+	unsigned short m_u16Box_Distance;
+	float m_f32Box_Degree;
+	unsigned char reserved[30];
+} altek_ai_box_info;
+
+
 /** \brief Severity of the librealsense logger. */
 typedef enum rs2_log_severity {
     RS2_LOG_SEVERITY_DEBUG, /**< Detailed information about ordinary operations */

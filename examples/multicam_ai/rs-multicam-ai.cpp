@@ -13,20 +13,6 @@
 #define FPS             15                // Defines the rate of frames per second                                //
 #define STREAM_INDEX    0                 // Defines the stream index, used for multiple streams of the same type //
 
-
-
-struct _ALTEK_AI_BOX_INFO_
-{
-    unsigned short m_u16Box_ID;
-    unsigned short m_u16Box_Left;
-    unsigned short m_u16Box_Top;
-    unsigned short m_u16Box_Right;
-    unsigned short m_u16Box_Bottom;
-    unsigned short m_u16Box_Distance;
-    float m_f32Box_Degree;
-};
-
-
 int main(int argc, char * argv[]) try
 {
     // Create a simple OpenGL window for rendering:
@@ -38,7 +24,7 @@ int main(int argc, char * argv[]) try
 
     std::vector<rs2::pipeline>            pipelines;
 
-    struct _ALTEK_AI_BOX_INFO_ box_info;
+    altek_ai_box_info 					  box_info;
    
 
     // Capture serial numbers before opening streaming
@@ -161,7 +147,7 @@ int main(int argc, char * argv[]) try
                                 + std::to_string(box_info.m_u16Box_Distance) + ","
                                 + std::to_string(box_info.m_f32Box_Degree) + ")";
 
-                            ai_box_info_start = ai_box_info_start + 16;
+                            ai_box_info_start = ai_box_info_start + sizeof(box_info);
                             //rs2::log(RS2_LOG_SEVERITY_INFO, msg2.c_str());
                             std::cout << msg2.c_str() << std::endl;
 

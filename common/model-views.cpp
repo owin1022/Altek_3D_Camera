@@ -131,18 +131,6 @@ struct attribute
     std::string description;
 };
 
-//for al3d ai
-struct _ALTEK_AI_BOX_INFO_
-{
-    unsigned short m_u16Box_ID;
-    unsigned short m_u16Box_Left;
-    unsigned short m_u16Box_Top;
-    unsigned short m_u16Box_Right;
-    unsigned short m_u16Box_Bottom;
-    unsigned short m_u16Box_Distance;
-    float m_f32Box_Degree;
-};
-
 namespace rs2
 {
     template <typename T>
@@ -2400,7 +2388,7 @@ namespace rs2
                     for (int i = 0; i < m_u16AI_BOX_Number; i++)
                     {
 
-                        struct _ALTEK_AI_BOX_INFO_ box_info;
+                        altek_ai_box_info box_info;
                         memcpy((char*)&box_info.m_u16Box_ID, ai_box_info_start, sizeof(box_info));
                         unsigned short m_u16Box_ID = box_info.m_u16Box_ID;
                         unsigned short m_u16Box_Left = box_info.m_u16Box_Left;
@@ -2419,7 +2407,7 @@ namespace rs2
                             << std::to_string(m_u16Box_Distance) << ","
                             << std::to_string(m_f32Box_Degree) << ")";
 
-                        ai_box_info_start = ai_box_info_start + 16;
+                        ai_box_info_start = ai_box_info_start + sizeof(box_info);
                         rs2::log(RS2_LOG_SEVERITY_INFO, msg2.c_str());
                     }
 

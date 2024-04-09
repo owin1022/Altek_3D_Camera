@@ -7,17 +7,6 @@
 
 namespace librealsense
 {
-    struct _ALTEK_AI_BOX_INFO_
-    {
-        unsigned short m_u16Box_ID;
-        unsigned short m_u16Box_Left;
-        unsigned short m_u16Box_Top;
-        unsigned short m_u16Box_Right;
-        unsigned short m_u16Box_Bottom;
-        unsigned short m_u16Box_Distance;
-        float m_f32Box_Degree;
-    };
-
     enum al3d_ai_cmd
     {
         al3d_ai_cmd_base = 0,
