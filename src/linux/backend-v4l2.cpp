@@ -108,7 +108,8 @@ namespace librealsense
         std::recursive_mutex named_mutex::_init_mutex;
         std::map<std::string, std::recursive_mutex> named_mutex::_dev_mutex;
         std::map<std::string, int> named_mutex::_dev_mutex_cnt;
-
+        uint32_t set_xu_opCode = 0;
+        
         named_mutex::named_mutex(const std::string& device_path, unsigned timeout)
             : _device_path(device_path),
               _timeout(timeout), // TODO: try to lock with timeout
@@ -937,6 +938,7 @@ namespace librealsense
             LOG_DEBUG_V4L("Select done, val = " << val << " at " << time_in_HH_MM_SS_MMM());
             if(val < 0)
             {
+				LOG_DEBUG_V4L("call streamoff ");
                 _is_capturing = false;
                 _is_started = false;
 
@@ -1153,10 +1155,25 @@ namespace librealsense
         {
             uvc_xu_control_query q = {static_cast<uint8_t>(xu.unit), control, UVC_SET_CUR,
                                       static_cast<uint16_t>(size), const_cast<uint8_t *>(data)};
+
+           
+            set_xu_opCode = *(uint32_t*)(data + 4);
+            LOG_DEBUG("set_xu, opcode = " << set_xu_opCode);
+            
+
             if(xioctl(_fd, UVCIOC_CTRL_QUERY, &q) < 0)
             {
                 if (errno == EIO || errno == EAGAIN) // TODO: Log?
                     return false;
+
+				//ds::fw_cmd::AL3D_AI_CMD = 193
+				//workaround for get/set ai result timeout. we just return false to avoid throw exception. 
+				if(set_xu_opCode==193) 
+				{
+					LOG_ERROR("fail to set_xu, opcode = " << set_xu_opCode);
+					return false;
+				}
+					
 
                 throw linux_backend_exception("set_xu(...). xioctl(UVCIOC_CTRL_QUERY) failed");
             }
@@ -1168,13 +1185,26 @@ namespace librealsense
             memset(data, 0, size);
             uvc_xu_control_query q = {static_cast<uint8_t>(xu.unit), control, UVC_GET_CUR,
                                       static_cast<uint16_t>(size), const_cast<uint8_t *>(data)};
+
+			LOG_DEBUG("get_xu, opcode = " << set_xu_opCode);
+
             if(xioctl(_fd, UVCIOC_CTRL_QUERY, &q) < 0)
             {
                 if (errno == EIO || errno == EAGAIN || errno == EBUSY) // TODO: Log?
                     return false;
+				
+				//ds::fw_cmd::AL3D_AI_CMD = 193
+				//workaround for get/set ai result timeout. we just return false to avoid throw exception. 
+				if(set_xu_opCode==193)
+				{
+					LOG_ERROR("failt to get_xu, opcode = " << set_xu_opCode);
+					return false;
+				}
+					
 
                 throw linux_backend_exception("get_xu(...). xioctl(UVCIOC_CTRL_QUERY) failed");
             }
+
 
             return true;
         }
@@ -1442,12 +1472,14 @@ namespace librealsense
             }
             catch (const std::exception& ex)
             {
+				LOG_DEBUG_V4L("capture_loop exception " );
                 LOG_ERROR(ex.what());
 
                 librealsense::notification n = {RS2_NOTIFICATION_CATEGORY_UNKNOWN_ERROR, 0, RS2_LOG_SEVERITY_ERROR, ex.what()};
 
                 _error_handler(n);
             }
+			LOG_DEBUG_V4L("capture_loop exit ");
         }
 
         bool v4l_uvc_device::has_metadata() const

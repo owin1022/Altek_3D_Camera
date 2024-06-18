@@ -16,7 +16,7 @@ namespace librealsense
         std::shared_ptr<option> ai_option_enable,
         std::shared_ptr<option> ai_option_mode,
         hw_monitor& hwm) :
-                _poll_intervals_ms(60), // Temperature check routine to be invoked every 2 sec
+                _poll_intervals_ms(60),
                 _thermal_threshold_deg(2.f),
                 _temp_base(0.f),
                 _hw_loop_on(false),
@@ -77,19 +77,26 @@ namespace librealsense
 
     void al3d_ai_monitor::polling(dispatcher::cancellable_timer cancellable_timer)
     {
+		
+		if(!_hw_loop_on)
+			return;
+
         if (cancellable_timer.try_sleep(std::chrono::milliseconds(_poll_intervals_ms)))
         {
                 command cmd(ds::fw_cmd::AL3D_AI_CMD, al3d_ai_cmd_AI_Result, al3d_ai_cmd_Get, 0x0, 0x0);
                 std::vector<uint8_t> data;
              
-
                 data = _hwm.send(cmd);
 
-                if (data.empty())
-                    throw invalid_value_exception("al3d_ai_cmd_option::query result is empty!");
-
-                add_new_result((char*)data.data());
-
+                if (data.empty()) 
+                {
+                    LOG_ERROR("Get AI Result fail: empty data");
+                }
+                else
+                {
+                    add_new_result((char*)data.data());
+                }
+				
         }
         else
         {

@@ -409,6 +409,7 @@ namespace librealsense
                 for (auto&& r : requests)
                 {
                     auto p = to_profile(r.get());
+                    LOG_DEBUG("_p.fps: " << p.fps);
                     _owner->_al3d_ai_monitor->set_polling_interval_ms(1000 / p.fps);
                 }
                 _owner->_al3d_ai_monitor->update(true);
